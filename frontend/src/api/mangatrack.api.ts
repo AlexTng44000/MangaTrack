@@ -6,7 +6,9 @@ import type {
     LibraryEntry,
 } from '../types/library';
 
-const API_URL = 'http://localhost:3000';
+const API_URL =
+    import.meta.env.VITE_API_URL ??
+    'http://localhost:3000';
 
 export async function getCatalog():
     Promise<CatalogItem[]> {
@@ -93,4 +95,43 @@ export async function updateProgress(
     }
 
     return response.json();
+}
+
+export interface CreateReminderInput {
+    userId: number;
+    email: string;
+    message: string;
+    scheduledAt?: string;
+}
+
+export interface CreateReminderResult {
+    jobId: string | null;
+    status: 'queued' | 'scheduled';
+    scheduledAt: string | null;
+}
+
+export async function createReminder(
+    input: CreateReminderInput,
+): Promise<CreateReminderResult> {
+    const response = await fetch(
+        `${API_URL}/notifications`,
+        {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(input),
+        },
+    );
+
+    const data = await response.json();
+
+    if (!response.ok) {
+        throw new Error(
+            data.error ??
+            'Impossible de programmer le rappel',
+        );
+    }
+
+    return data;
 }

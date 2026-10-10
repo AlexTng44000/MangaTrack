@@ -27,6 +27,13 @@ export function LibraryPage() {
     const [loading, setLoading] =
         useState(true);
 
+    const statusLabels = {
+        a_commencer: 'À commencer',
+        en_cours: 'En cours',
+        termine: 'Terminé',
+        abandonne: 'Abandonné',
+    };
+
     useEffect(() => {
         Promise.all([
             getLibrary(),
@@ -100,7 +107,7 @@ export function LibraryPage() {
                             </h3>
 
                             <p>
-                                Statut : {entry.status}
+                                Statut : {statusLabels[entry.status]}
                             </p>
 
                             <p>

@@ -10,19 +10,27 @@ import {
   LibraryPage,
 } from './pages/LibraryPage';
 
+import {
+  RemindersPage,
+} from './pages/RemindersPage';
+
 import './App.css';
+
+type Page =
+  | 'catalog'
+  | 'library'
+  | 'reminders';
 
 function App() {
   const [page, setPage] =
-    useState<'catalog' | 'library'>(
-      'catalog',
-    );
+    useState<Page>('catalog');
 
   return (
     <>
       <header className="app-header">
         <div>
           <h1>MangaTrack</h1>
+
           <p>
             Suis tes mangas et anime préférés.
           </p>
@@ -44,12 +52,28 @@ function App() {
           >
             Ma bibliothèque
           </button>
+
+          <button
+            onClick={() =>
+              setPage('reminders')
+            }
+          >
+            Rappels
+          </button>
         </nav>
       </header>
 
-      {page === 'catalog'
-        ? <CatalogPage />
-        : <LibraryPage />}
+      {page === 'catalog' && (
+        <CatalogPage />
+      )}
+
+      {page === 'library' && (
+        <LibraryPage />
+      )}
+
+      {page === 'reminders' && (
+        <RemindersPage />
+      )}
     </>
   );
 }
