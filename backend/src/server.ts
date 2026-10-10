@@ -1,7 +1,17 @@
 import express from 'express';
 import cors from 'cors';
 
-import { catalogRouter } from './modules/catalog/catalog.routes.js';
+import {
+    FakeCatalogAdapter,
+} from './integrations/catalog/fakeCatalog.adapter.js';
+
+import {
+    CatalogService,
+} from './modules/catalog/catalog.service.js';
+
+import {
+    createCatalogRouter,
+} from './modules/catalog/catalog.routes.js';
 
 import { LibraryService } from './modules/library/library.service.js';
 import { createLibraryRouter } from './modules/library/library.routes.js';
@@ -49,6 +59,11 @@ const notificationService =
         notificationQueue,
     );
 
+const catalogAdapter =
+    new FakeCatalogAdapter();
+
+const catalogService =
+    new CatalogService(catalogAdapter);
 app.get('/health', (_req, res) => {
     res.json({
         status: 'ok',
@@ -56,7 +71,10 @@ app.get('/health', (_req, res) => {
     });
 });
 
-app.use('/catalog', catalogRouter);
+app.use(
+    '/catalog',
+    createCatalogRouter(catalogService),
+);
 
 app.use(
     '/library',

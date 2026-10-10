@@ -4,9 +4,11 @@ import type {
 } from './catalog.types.js';
 
 export class CatalogService {
-    constructor(private readonly catalogPort: CatalogPort) { }
+    constructor(
+        private readonly catalogPort: CatalogPort,
+    ) { }
 
-    async getCatalog(): Promise<CatalogItem[]> {
+    async getAll(): Promise<CatalogItem[]> {
         return this.catalogPort.getAll();
     }
 }

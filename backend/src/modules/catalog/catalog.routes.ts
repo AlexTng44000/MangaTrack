@@ -1,15 +1,20 @@
 import { Router } from 'express';
 
-import { FakeCatalogAdapter } from '../../integrations/catalog/fakeCatalog.adapter.js';
-import { CatalogService } from './catalog.service.js';
+import type {
+    CatalogService,
+} from './catalog.service.js';
 
-export const catalogRouter = Router();
+export function createCatalogRouter(
+    catalogService: CatalogService,
+): Router {
+    const router = Router();
 
-const catalogAdapter = new FakeCatalogAdapter();
-const catalogService = new CatalogService(catalogAdapter);
+    router.get('/', async (_req, res) => {
+        const items =
+            await catalogService.getAll();
 
-catalogRouter.get('/', async (_req, res) => {
-    const catalog = await catalogService.getCatalog();
+        return res.json(items);
+    });
 
-    res.json(catalog);
-});
+    return router;
+}
