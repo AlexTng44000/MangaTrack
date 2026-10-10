@@ -1,5 +1,6 @@
 import express from 'express';
 import cors from 'cors';
+import { libraryRouter } from './modules/library/library.routes.js';
 
 import { catalogRouter } from './modules/catalog/catalog.routes.js';
 
@@ -9,6 +10,7 @@ const PORT = 3000;
 app.use(cors());
 app.use(express.json());
 
+
 app.get('/health', (_req, res) => {
     res.json({
         status: 'ok',
@@ -17,6 +19,7 @@ app.get('/health', (_req, res) => {
 });
 
 app.use('/catalog', catalogRouter);
+app.use('/library', libraryRouter);
 
 app.listen(PORT, () => {
     console.log(`MangaTrack API started on http://localhost:${PORT}`);
