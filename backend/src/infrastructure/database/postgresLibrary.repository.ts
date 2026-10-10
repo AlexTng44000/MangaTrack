@@ -55,20 +55,26 @@ export class PostgresLibraryRepository
     ): Promise<LibraryEntry> {
         const result = await this.db.query<LibraryEntry>(
             `
-        INSERT INTO library_entries (
-          user_id,
-          catalog_item_id,
-          status,
-          progress
-        )
-        VALUES ($1, $2, $3, 0)
-        RETURNING
-          id,
-          user_id AS "userId",
-          catalog_item_id AS "catalogItemId",
-          status,
-          progress
-      `,
+            INSERT INTO library_entries (
+              user_id,
+              catalog_item_id,
+              status
+            )
+            VALUES ($1, $2, $3)
+      
+            ON CONFLICT (
+              user_id,
+              catalog_item_id
+            )
+            DO NOTHING
+      
+            RETURNING
+              id,
+              user_id AS "userId",
+              catalog_item_id AS "catalogItemId",
+              status,
+              progress
+          `,
             [
                 input.userId,
                 input.catalogItemId,
@@ -76,7 +82,15 @@ export class PostgresLibraryRepository
             ],
         );
 
-        return result.rows[0]!;
+        const entry = result.rows[0];
+
+        if (!entry) {
+            throw new Error(
+                'LIBRARY_ENTRY_ALREADY_EXISTS',
+            );
+        }
+
+        return entry;
     }
 
     async updateProgress(
