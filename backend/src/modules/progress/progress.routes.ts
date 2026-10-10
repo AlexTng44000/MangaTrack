@@ -8,33 +8,43 @@ export function createProgressRouter(
 ): Router {
     const router = Router();
 
-    router.patch('/:libraryEntryId', (req, res) => {
-        const libraryEntryId = Number(req.params.libraryEntryId);
-        const input = req.body as UpdateProgressInput;
+    router.patch(
+        '/:libraryEntryId',
+        async (req, res) => {
+            const libraryEntryId = Number(
+                req.params.libraryEntryId,
+            );
 
-        if (
-            Number.isNaN(libraryEntryId) ||
-            typeof input.progress !== 'number' ||
-            input.progress < 0
-        ) {
-            return res.status(400).json({
-                error: 'Une progression valide est obligatoire',
-            });
-        }
+            const input =
+                req.body as UpdateProgressInput;
 
-        const entry = progressService.updateProgress(
-            libraryEntryId,
-            input.progress,
-        );
+            if (
+                Number.isNaN(libraryEntryId) ||
+                typeof input.progress !== 'number' ||
+                input.progress < 0
+            ) {
+                return res.status(400).json({
+                    error:
+                        'Une progression valide est obligatoire',
+                });
+            }
 
-        if (!entry) {
-            return res.status(404).json({
-                error: 'Œuvre introuvable dans la bibliothèque',
-            });
-        }
+            const entry =
+                await progressService.updateProgress(
+                    libraryEntryId,
+                    input.progress,
+                );
 
-        return res.json(entry);
-    });
+            if (!entry) {
+                return res.status(404).json({
+                    error:
+                        'Œuvre introuvable dans la bibliothèque',
+                });
+            }
+
+            return res.json(entry);
+        },
+    );
 
     return router;
 }

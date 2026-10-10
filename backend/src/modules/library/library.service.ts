@@ -3,44 +3,38 @@ import type {
     LibraryEntry,
 } from './library.types.js';
 
+import type {
+    LibraryRepository,
+} from './library.repository.js';
+
 export class LibraryService {
-    private entries: LibraryEntry[] = [];
-    private nextId = 1;
+    constructor(
+        private readonly repository: LibraryRepository,
+    ) { }
 
-    getAll(): LibraryEntry[] {
-        return this.entries;
+    async getAll(): Promise<LibraryEntry[]> {
+        return this.repository.getAll();
     }
 
-    getById(id: number): LibraryEntry | undefined {
-        return this.entries.find((entry) => entry.id === id);
+    async getById(
+        id: number,
+    ): Promise<LibraryEntry | undefined> {
+        return this.repository.getById(id);
     }
 
-    add(input: CreateLibraryEntryInput): LibraryEntry {
-        const entry: LibraryEntry = {
-            id: this.nextId++,
-            userId: input.userId,
-            catalogItemId: input.catalogItemId,
-            status: input.status,
-            progress: 0,
-        };
-
-        this.entries.push(entry);
-
-        return entry;
+    async add(
+        input: CreateLibraryEntryInput,
+    ): Promise<LibraryEntry> {
+        return this.repository.add(input);
     }
 
-    updateProgress(
+    async updateProgress(
         id: number,
         progress: number,
-    ): LibraryEntry | undefined {
-        const entry = this.getById(id);
-
-        if (!entry) {
-            return undefined;
-        }
-
-        entry.progress = progress;
-
-        return entry;
+    ): Promise<LibraryEntry | undefined> {
+        return this.repository.updateProgress(
+            id,
+            progress,
+        );
     }
 }
