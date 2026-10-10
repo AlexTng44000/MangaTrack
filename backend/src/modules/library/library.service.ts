@@ -11,6 +11,10 @@ export class LibraryService {
         return this.entries;
     }
 
+    getById(id: number): LibraryEntry | undefined {
+        return this.entries.find((entry) => entry.id === id);
+    }
+
     add(input: CreateLibraryEntryInput): LibraryEntry {
         const entry: LibraryEntry = {
             id: this.nextId++,
@@ -21,6 +25,21 @@ export class LibraryService {
         };
 
         this.entries.push(entry);
+
+        return entry;
+    }
+
+    updateProgress(
+        id: number,
+        progress: number,
+    ): LibraryEntry | undefined {
+        const entry = this.getById(id);
+
+        if (!entry) {
+            return undefined;
+        }
+
+        entry.progress = progress;
 
         return entry;
     }

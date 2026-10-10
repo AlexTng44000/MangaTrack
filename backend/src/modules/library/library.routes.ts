@@ -1,32 +1,36 @@
 import { Router } from 'express';
 
-import { LibraryService } from './library.service.js';
+import type { LibraryService } from './library.service.js';
 import type {
     CreateLibraryEntryInput,
 } from './library.types.js';
 
-export const libraryRouter = Router();
+export function createLibraryRouter(
+    libraryService: LibraryService,
+): Router {
+    const router = Router();
 
-const libraryService = new LibraryService();
+    router.get('/', (_req, res) => {
+        res.json(libraryService.getAll());
+    });
 
-libraryRouter.get('/', (_req, res) => {
-    res.json(libraryService.getAll());
-});
+    router.post('/', (req, res) => {
+        const input = req.body as CreateLibraryEntryInput;
 
-libraryRouter.post('/', (req, res) => {
-    const input = req.body as CreateLibraryEntryInput;
+        if (
+            !input.userId ||
+            !input.catalogItemId ||
+            !input.status
+        ) {
+            return res.status(400).json({
+                error: 'userId, catalogItemId et status sont obligatoires',
+            });
+        }
 
-    if (
-        !input.userId ||
-        !input.catalogItemId ||
-        !input.status
-    ) {
-        return res.status(400).json({
-            error: 'userId, catalogItemId et status sont obligatoires',
-        });
-    }
+        const entry = libraryService.add(input);
 
-    const entry = libraryService.add(input);
+        return res.status(201).json(entry);
+    });
 
-    return res.status(201).json(entry);
-});
+    return router;
+}
