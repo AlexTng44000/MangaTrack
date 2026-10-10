@@ -1,6 +1,8 @@
 import express from 'express';
 import cors from 'cors';
 
+import { catalogRouter } from './modules/catalog/catalog.routes.js';
+
 const app = express();
 const PORT = 3000;
 
@@ -14,6 +16,8 @@ app.get('/health', (_req, res) => {
     });
 });
 
+app.use('/catalog', catalogRouter);
+
 app.listen(PORT, () => {
-    console.log(`MangaTrack API démarrée sur http://localhost:${PORT}`);
+    console.log(`MangaTrack API started on http://localhost:${PORT}`);
 });
