@@ -8,6 +8,7 @@
   },
   "scripts": {
     "dev": "tsx watch src/server.ts",
+    "worker:notifications": "tsx watch src/workers/notification.worker.ts",
     "start": "tsx src/server.ts",
     "test": "node --import=tsx --test test/*.test.ts",
     "typecheck": "tsc --noEmit"
@@ -16,9 +17,11 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "bullmq": "^6.3.12",
     "cors": "^2.8.6",
     "dotenv": "^18.0.7",
     "express": "^5.3.0",
+    "ioredis": "^6.0.0",
     "pg": "^8.23.1"
   },
   "devDependencies": {

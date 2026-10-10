@@ -14,6 +14,14 @@ import {
     PostgresLibraryRepository,
 } from './infrastructure/database/postgresLibrary.repository.js';
 
+import {
+    NotificationService,
+} from './modules/notifications/notification.service.js';
+
+import {
+    createNotificationRouter,
+} from './modules/notifications/notification.routes.js';
+
 const app = express();
 const PORT = 3000;
 
@@ -28,6 +36,9 @@ const libraryService =
 
 const progressService =
     new ProgressService(libraryService);
+
+const notificationService =
+    new NotificationService();
 
 app.get('/health', (_req, res) => {
     res.json({
@@ -46,6 +57,11 @@ app.use(
 app.use(
     '/progress',
     createProgressRouter(progressService),
+);
+
+app.use(
+    '/notifications',
+    createNotificationRouter(notificationService),
 );
 
 app.listen(PORT, () => {
