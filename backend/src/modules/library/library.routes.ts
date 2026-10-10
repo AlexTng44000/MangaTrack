@@ -32,10 +32,27 @@ export function createLibraryRouter(
             });
         }
 
-        const entry =
-            await libraryService.add(input);
+        try {
+            const entry =
+                await libraryService.add(input);
 
-        return res.status(201).json(entry);
+            return res.status(201).json(entry);
+        } catch (error) {
+            if (
+                error instanceof Error &&
+                error.message ===
+                'LIBRARY_ENTRY_ALREADY_EXISTS'
+            ) {
+                return res.status(409).json({
+                    error:
+                        'Cette œuvre est déjà dans la bibliothèque',
+                });
+            }
+
+            return res.status(500).json({
+                error: 'Erreur interne',
+            });
+        }
     });
 
     return router;
