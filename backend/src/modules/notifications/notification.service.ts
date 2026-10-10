@@ -1,12 +1,17 @@
 import type {
+    NotificationQueuePort,
+} from './notificationQueue.port.js';
+
+import type {
     CreateNotificationInput,
 } from './notification.types.js';
 
-import {
-    notificationQueue,
-} from '../../infrastructure/queue/notification.queue.js';
-
 export class NotificationService {
+    constructor(
+        private readonly queue:
+            NotificationQueuePort,
+    ) { }
+
     async createReminder(
         input: CreateNotificationInput,
     ) {
@@ -32,22 +37,14 @@ export class NotificationService {
             }
         }
 
-        const job = await notificationQueue.add(
-            'send-reminder',
-            input,
-            {
+        const jobId =
+            await this.queue.enqueue(
+                input,
                 delay,
-                attempts: 3,
-
-                backoff: {
-                    type: 'exponential',
-                    delay: 2000,
-                },
-            },
-        );
+            );
 
         return {
-            jobId: job.id,
+            jobId,
             status:
                 delay > 0 ? 'scheduled' : 'queued',
             scheduledAt:

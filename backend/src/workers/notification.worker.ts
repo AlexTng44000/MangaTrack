@@ -2,17 +2,27 @@ import { Worker } from 'bullmq';
 
 import type {
     NotificationJobData,
-} from '../infrastructure/queue/notification.queue.js';
+} from '../modules/notifications/notification.types.js';
+
+import type {
+    EmailPort,
+} from '../modules/notifications/email.port.js';
+
+import {
+    FakeEmailAdapter,
+} from '../integrations/email/fakeEmail.adapter.js';
+
+const emailService: EmailPort =
+    new FakeEmailAdapter();
 
 const worker =
     new Worker<NotificationJobData>(
         'notifications',
         async (job) => {
-            console.log(
-                `[EMAIL SIMULÉ] À ${job.data.email}`,
+            await emailService.send(
+                job.data.email,
+                job.data.message,
             );
-
-            console.log(job.data.message);
 
             return {
                 sent: true,

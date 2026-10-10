@@ -22,6 +22,10 @@ import {
     createNotificationRouter,
 } from './modules/notifications/notification.routes.js';
 
+import {
+    BullMqNotificationQueueAdapter,
+} from './infrastructure/queue/bullMqNotificationQueue.adapter.js';
+
 const app = express();
 const PORT = 3000;
 
@@ -37,8 +41,13 @@ const libraryService =
 const progressService =
     new ProgressService(libraryService);
 
+const notificationQueue =
+    new BullMqNotificationQueueAdapter();
+
 const notificationService =
-    new NotificationService();
+    new NotificationService(
+        notificationQueue,
+    );
 
 app.get('/health', (_req, res) => {
     res.json({
