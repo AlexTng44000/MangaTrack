@@ -1,0 +1,46 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: mangatrack-postgres
+    restart: unless-stopped
+
+    environment:
+      POSTGRES_DB: mangatrack
+      POSTGRES_USER: mangatrack
+      POSTGRES_PASSWORD: mangatrack_dev
+
+    ports:
+      - "5432:5432"
+
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./backend/src/infrastructure/database/init.sql:/docker-entrypoint-initdb.d/001-init.sql:ro
+
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U mangatrack -d mangatrack" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: mangatrack-redis
+    restart: unless-stopped
+
+    ports:
+      - "6379:6379"
+
+    command: [ "redis-server", "--appendonly", "yes", "--maxmemory-policy", "noeviction" ]
+
+    volumes:
+      - redis_data:/data
+
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data:
+  redis_data:
