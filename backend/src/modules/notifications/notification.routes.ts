@@ -28,10 +28,21 @@ export function createNotificationRouter(
             });
         }
 
-        const result =
-            await notificationService.createReminder(input);
+        try {
+            const result =
+                await notificationService.createReminder(
+                    input,
+                );
 
-        return res.status(202).json(result);
+            return res.status(202).json(result);
+        } catch (error) {
+            return res.status(400).json({
+                error:
+                    error instanceof Error
+                        ? error.message
+                        : 'Rappel invalide',
+            });
+        }
     });
 
     return router;

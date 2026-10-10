@@ -4,6 +4,7 @@ export interface NotificationJobData {
     userId: number;
     email: string;
     message: string;
+    scheduledAt?: string;
 }
 
 export const notificationQueue =
