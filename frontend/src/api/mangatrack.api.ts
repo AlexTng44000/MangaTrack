@@ -166,3 +166,25 @@ export async function createReminder(
 
     return data;
 }
+
+export interface AdminUser {
+    id: number;
+    email: string;
+    role: 'user' | 'admin';
+}
+
+export async function getAdminUsers():
+    Promise<AdminUser[]> {
+    const response =
+        await authenticatedFetch(
+            `${API_URL}/admin/users`,
+        );
+
+    if (!response.ok) {
+        throw new Error(
+            'Impossible de charger les utilisateurs',
+        );
+    }
+
+    return response.json();
+}

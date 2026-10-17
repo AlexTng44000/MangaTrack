@@ -15,33 +15,49 @@ import {
 } from './pages/RemindersPage';
 
 import {
+  AdminPage,
+} from './pages/AdminPage';
+
+import {
   AuthPage,
 } from './auth/AuthPage';
 
 import {
-  isAuthenticated,
+  getCurrentUser,
   logout,
 } from './auth/auth';
 
+import type {
+  AuthUser,
+} from './auth/auth';
+
 import './App.css';
+
 type Page =
   | 'catalog'
   | 'library'
-  | 'reminders';
+  | 'reminders'
+  | 'admin';
 
 function App() {
+  const [user, setUser] =
+    useState<AuthUser | null>(
+      getCurrentUser(),
+    );
+
   const [page, setPage] =
     useState<Page>('catalog');
-  const [authenticated, setAuthenticated] =
-    useState(
-      isAuthenticated(),
-    );
-  if (!authenticated) {
+
+  if (!user) {
     return (
       <AuthPage
-        onAuthenticated={() =>
-          setAuthenticated(true)
-        }
+        onAuthenticated={(
+          authenticatedUser,
+        ) => {
+          setUser(
+            authenticatedUser,
+          );
+        }}
       />
     );
   }
@@ -53,19 +69,12 @@ function App() {
           <h1>MangaTrack</h1>
 
           <p>
-            Suis tes mangas et anime préférés.
+            Suis tes mangas et anime
+            préférés.
           </p>
         </div>
 
         <nav>
-          <button
-            onClick={() => {
-              logout();
-              setAuthenticated(false);
-            }}
-          >
-            Déconnexion
-          </button>
           <button
             onClick={() =>
               setPage('catalog')
@@ -89,6 +98,26 @@ function App() {
           >
             Rappels
           </button>
+
+          {user.role === 'admin' && (
+            <button
+              onClick={() =>
+                setPage('admin')
+              }
+            >
+              Administration
+            </button>
+          )}
+
+          <button
+            onClick={() => {
+              logout();
+              setUser(null);
+              setPage('catalog');
+            }}
+          >
+            Déconnexion
+          </button>
         </nav>
       </header>
 
@@ -103,6 +132,11 @@ function App() {
       {page === 'reminders' && (
         <RemindersPage />
       )}
+
+      {page === 'admin' &&
+        user.role === 'admin' && (
+          <AdminPage />
+        )}
     </>
   );
 }

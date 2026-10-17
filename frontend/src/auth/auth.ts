@@ -3,6 +3,7 @@ const API_URL =
     'http://localhost:3000';
 
 const TOKEN_KEY = 'mangatrack_token';
+const USER_KEY = 'mangatrack_user';
 
 export interface AuthUser {
     id: number;
@@ -30,6 +31,7 @@ export function saveToken(
 
 export function removeToken(): void {
     sessionStorage.removeItem(TOKEN_KEY);
+    sessionStorage.removeItem(USER_KEY);
 }
 
 export function isAuthenticated(): boolean {
@@ -80,7 +82,7 @@ export async function login(
         );
 
     saveToken(result.token);
-
+    saveUser(result.user);
     return result;
 }
 
@@ -96,10 +98,34 @@ export async function register(
         );
 
     saveToken(result.token);
-
+    saveUser(result.user);
     return result;
 }
 
 export function logout(): void {
     removeToken();
+}
+export function saveUser(
+    user: AuthUser,
+): void {
+    sessionStorage.setItem(
+        USER_KEY,
+        JSON.stringify(user),
+    );
+}
+
+export function getCurrentUser():
+    AuthUser | null {
+    const value =
+        sessionStorage.getItem(USER_KEY);
+
+    if (!value) {
+        return null;
+    }
+
+    try {
+        return JSON.parse(value) as AuthUser;
+    } catch {
+        return null;
+    }
 }

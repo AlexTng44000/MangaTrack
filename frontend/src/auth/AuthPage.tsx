@@ -7,10 +7,14 @@ import {
     register,
 } from './auth';
 
-interface AuthPageProps {
-    onAuthenticated: () => void;
-}
+import type {
+    AuthUser,
+} from './auth';
 
+interface AuthPageProps {
+    onAuthenticated:
+    (user: AuthUser) => void;
+}
 export function AuthPage({
     onAuthenticated,
 }: AuthPageProps) {
@@ -40,19 +44,12 @@ export function AuthPage({
         setLoading(true);
 
         try {
-            if (mode === 'login') {
-                await login(
-                    email,
-                    password,
-                );
-            } else {
-                await register(
-                    email,
-                    password,
-                );
-            }
+            const result =
+                mode === 'login'
+                    ? await login(email, password)
+                    : await register(email, password);
 
-            onAuthenticated();
+            onAuthenticated(result.user);
         } catch (err) {
             setError(
                 err instanceof Error
