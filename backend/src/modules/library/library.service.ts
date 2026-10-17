@@ -4,6 +4,8 @@ import type {
 
 import type {
     CreateLibraryEntryInput,
+    LibraryEntry,
+    LibraryStatus,
 } from './library.types.js';
 
 export class LibraryService {
@@ -67,5 +69,26 @@ export class LibraryService {
                 'LIBRARY_ENTRY_NOT_FOUND',
             );
         }
+    }
+
+    async updateStatus(
+        id: number,
+        userId: number,
+        status: LibraryStatus,
+    ): Promise<LibraryEntry> {
+        const entry =
+            await this.repository.updateStatus(
+                id,
+                userId,
+                status,
+            );
+
+        if (!entry) {
+            throw new Error(
+                'LIBRARY_ENTRY_NOT_FOUND',
+            );
+        }
+
+        return entry;
     }
 }

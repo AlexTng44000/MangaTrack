@@ -7,16 +7,19 @@ import {
     deleteLibraryEntry,
     getCatalog,
     getLibrary,
+    updateLibraryStatus,
     updateProgress,
 } from '../api/mangatrack.api';
+
+import type {
+    LibraryStatus,
+    LibraryEntry,
+} from '../types/library';
 
 import type {
     CatalogItem,
 } from '../types/catalog';
 
-import type {
-    LibraryEntry,
-} from '../types/library';
 
 export function LibraryPage() {
     const [library, setLibrary] =
@@ -27,13 +30,6 @@ export function LibraryPage() {
 
     const [loading, setLoading] =
         useState(true);
-
-    const statusLabels = {
-        a_commencer: 'À commencer',
-        en_cours: 'En cours',
-        termine: 'Terminé',
-        abandonne: 'Abandonné',
-    };
 
     useEffect(() => {
         Promise.all([
@@ -107,9 +103,35 @@ export function LibraryPage() {
                                     `Œuvre #${entry.catalogItemId}`}
                             </h3>
 
-                            <p>
-                                Statut : {statusLabels[entry.status]}
-                            </p>
+                            <label>
+                                Statut :{' '}
+                                <select
+                                    value={entry.status}
+                                    onChange={(event) =>
+                                        handleStatusChange(
+                                            entry.id,
+                                            event.target
+                                                .value as LibraryStatus,
+                                        )
+                                    }
+                                >
+                                    <option value="a_commencer">
+                                        À commencer
+                                    </option>
+
+                                    <option value="en_cours">
+                                        En cours
+                                    </option>
+
+                                    <option value="termine">
+                                        Terminé
+                                    </option>
+
+                                    <option value="abandonne">
+                                        Abandonné
+                                    </option>
+                                </select>
+                            </label>
 
                             <p>
                                 Progression : {entry.progress}
@@ -168,6 +190,33 @@ export function LibraryPage() {
         } catch {
             alert(
                 'Impossible de supprimer cette œuvre.',
+            );
+        }
+    }
+
+    async function handleStatusChange(
+        id: number,
+        status: LibraryStatus,
+    ) {
+        try {
+            const updatedEntry =
+                await updateLibraryStatus(
+                    id,
+                    status,
+                );
+
+            setLibrary(
+                (currentLibrary) =>
+                    currentLibrary.map(
+                        (entry) =>
+                            entry.id === id
+                                ? updatedEntry
+                                : entry,
+                    ),
+            );
+        } catch {
+            alert(
+                'Impossible de modifier le statut.',
             );
         }
     }

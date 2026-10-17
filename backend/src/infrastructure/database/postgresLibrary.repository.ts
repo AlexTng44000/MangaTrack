@@ -9,6 +9,7 @@ import type {
 import type {
     CreateLibraryEntryInput,
     LibraryEntry,
+    LibraryStatus,
 } from '../../modules/library/library.types.js';
 
 export class PostgresLibraryRepository
@@ -163,4 +164,48 @@ export class PostgresLibraryRepository
             result.rowCount > 0
         );
     }
+
+    async updateStatus(
+        id: number,
+        userId: number,
+        status: LibraryStatus,
+    ): Promise<LibraryEntry | null> {
+        const result =
+            await this.db.query(
+                `
+                UPDATE library_entries
+                SET status = $1
+                WHERE id = $2
+                AND user_id = $3
+                RETURNING
+                    id,
+                    user_id,
+                    catalog_item_id,
+                    status,
+                    progress
+                `,
+                [
+                    status,
+                    id,
+                    userId,
+                ],
+            );
+
+        if (result.rowCount === 0) {
+            return null;
+        }
+
+        const row =
+            result.rows[0];
+
+        return {
+            id: row.id,
+            userId: row.user_id,
+            catalogItemId:
+                row.catalog_item_id,
+            status: row.status,
+            progress: row.progress,
+        };
+    }
+
 }

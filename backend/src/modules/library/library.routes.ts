@@ -1,9 +1,7 @@
 import { Router } from 'express';
 
 import type { LibraryService } from './library.service.js';
-import type {
-    CreateLibraryEntryInput,
-} from './library.types.js';
+
 import {
     createLibraryEntrySchema,
 } from './library.schema.js';
@@ -11,6 +9,10 @@ import {
 import type {
     RequestHandler,
 } from 'express';
+
+import {
+    updateLibraryStatusSchema,
+} from './library.schema.js';
 
 export function createLibraryRouter(
     libraryService: LibraryService,
@@ -111,6 +113,65 @@ export function createLibraryRouter(
                         error:
                             'Œuvre introuvable dans la bibliothèque',
                     });
+                }
+
+                throw error;
+            }
+        },
+    );
+
+    router.patch(
+        '/:id/status',
+        requireAuth,
+        async (req, res) => {
+            const id =
+                Number(req.params.id);
+
+            if (
+                !Number.isInteger(id) ||
+                id < 1
+            ) {
+                return res.status(400).json({
+                    error:
+                        'Identifiant invalide',
+                });
+            }
+
+            const parsed =
+                updateLibraryStatusSchema
+                    .safeParse(req.body);
+
+            if (!parsed.success) {
+                return res.status(400).json({
+                    error:
+                        'Statut invalide',
+                    details:
+                        parsed.error.flatten(),
+                });
+            }
+
+            try {
+                const entry =
+                    await libraryService
+                        .updateStatus(
+                            id,
+                            req.auth!.userId,
+                            parsed.data.status,
+                        );
+
+                return res.json(entry);
+            } catch (error) {
+                if (
+                    error instanceof Error &&
+                    error.message ===
+                    'LIBRARY_ENTRY_NOT_FOUND'
+                ) {
+                    return res
+                        .status(404)
+                        .json({
+                            error:
+                                'Œuvre introuvable dans la bibliothèque',
+                        });
                 }
 
                 throw error;

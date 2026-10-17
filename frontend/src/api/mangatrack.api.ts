@@ -4,6 +4,7 @@ import type {
 
 import type {
     LibraryEntry,
+    LibraryStatus,
 } from '../types/library';
 
 import {
@@ -246,4 +247,32 @@ export async function deleteLibraryEntry(
             'Impossible de supprimer cette œuvre',
         );
     }
+}
+
+export async function updateLibraryStatus(
+    id: number,
+    status: LibraryStatus,
+): Promise<LibraryEntry> {
+    const response =
+        await authenticatedFetch(
+            `${API_URL}/library/${id}/status`,
+            {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type':
+                        'application/json',
+                },
+                body: JSON.stringify({
+                    status,
+                }),
+            },
+        );
+
+    if (!response.ok) {
+        throw new Error(
+            'Impossible de modifier le statut',
+        );
+    }
+
+    return response.json();
 }

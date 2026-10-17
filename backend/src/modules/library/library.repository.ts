@@ -1,6 +1,7 @@
 import type {
     CreateLibraryEntryInput,
     LibraryEntry,
+    LibraryStatus,
 } from './library.types.js';
 
 export interface LibraryRepository {
@@ -28,4 +29,10 @@ export interface LibraryRepository {
         id: number,
         userId: number,
     ): Promise<boolean>;
+
+    updateStatus(
+        id: number,
+        userId: number,
+        status: LibraryStatus,
+    ): Promise<LibraryEntry | null>;
 }

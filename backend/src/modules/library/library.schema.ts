@@ -14,3 +14,13 @@ export const createLibraryEntrySchema =
             'abandonne',
         ]),
     });
+
+export const updateLibraryStatusSchema =
+    z.object({
+        status: z.enum([
+            'a_commencer',
+            'en_cours',
+            'termine',
+            'abandonne',
+        ]),
+    });
