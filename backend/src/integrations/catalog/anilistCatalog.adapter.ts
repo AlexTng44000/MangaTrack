@@ -5,6 +5,7 @@ import type {
     CatalogItem,
     CatalogPageResult,
     CatalogPort,
+    CatalogRelation,
 } from '../../modules/catalog/catalog.types.js';
 
 interface AniListMedia {
@@ -504,6 +505,30 @@ export class AniListCatalogAdapter
                     format
                     seasonYear
                     averageScore
+
+                    relations {
+                        edges {
+                            relationType
+
+                            node {
+                                id
+
+                                title {
+                                    english
+                                    romaji
+                                }
+
+                                type
+
+                                coverImage {
+                                    large
+                                }
+
+                                format
+                                isAdult
+                            }
+                        }
+                    }
                 }
             }
         `;
@@ -590,6 +615,40 @@ export class AniListCatalogAdapter
 
                         averageScore:
                         number | null;
+
+                        relations: {
+                            edges: Array<{
+                                relationType:
+                                string;
+
+                                node: {
+                                    id: number;
+
+                                    title: {
+                                        english:
+                                        string | null;
+
+                                        romaji:
+                                        string;
+                                    };
+
+                                    type:
+                                    | 'ANIME'
+                                    | 'MANGA';
+
+                                    coverImage: {
+                                        large:
+                                        string | null;
+                                    };
+
+                                    format:
+                                    string | null;
+
+                                    isAdult:
+                                    boolean;
+                                } | null;
+                            }>;
+                        };
                     } | null;
                 };
 
@@ -616,6 +675,49 @@ export class AniListCatalogAdapter
         if (!item) {
             return null;
         }
+
+        const relations =
+            item.relations.edges
+                .filter(
+                    (edge) =>
+                        edge.node !== null &&
+                        !edge.node.isAdult,
+                )
+                .map(
+                    (
+                        edge,
+                    ): CatalogRelation => {
+                        const node =
+                            edge.node!;
+
+                        return {
+                            id:
+                                node.id,
+
+                            title:
+                                node.title
+                                    .english ??
+                                node.title
+                                    .romaji,
+
+                            type:
+                                node.type ===
+                                    'ANIME'
+                                    ? 'anime'
+                                    : 'manga',
+
+                            relationType:
+                                edge.relationType,
+
+                            imageUrl:
+                                node.coverImage
+                                    .large,
+
+                            format:
+                                node.format,
+                        };
+                    },
+                );
 
         return {
             id: item.id,
@@ -660,6 +762,8 @@ export class AniListCatalogAdapter
 
             averageScore:
                 item.averageScore,
+
+            relations,
         };
     }
 

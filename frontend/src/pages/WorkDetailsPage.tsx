@@ -14,7 +14,75 @@ import {
 
 import type {
     CatalogDetails,
+    CatalogRelation,
 } from '../types/catalog';
+
+function getRelationLabel(
+    relationType: string,
+): string {
+    switch (relationType) {
+        case 'ADAPTATION':
+            return 'Adaptation';
+
+        case 'PREQUEL':
+            return 'Préquelle';
+
+        case 'SEQUEL':
+            return 'Suite';
+
+        case 'PARENT':
+            return 'Œuvre principale';
+
+        case 'SIDE_STORY':
+            return 'Histoire parallèle';
+
+        case 'SPIN_OFF':
+            return 'Spin-off';
+
+        case 'ALTERNATIVE':
+            return 'Version alternative';
+
+        case 'SUMMARY':
+            return 'Résumé';
+
+        case 'CHARACTER':
+            return 'Personnages liés';
+
+        case 'SOURCE':
+            return 'Œuvre source';
+
+        case 'COMPILATION':
+            return 'Compilation';
+
+        case 'CONTAINS':
+            return 'Contient';
+
+        case 'OTHER':
+            return 'Autre relation';
+
+        default:
+            return relationType
+                .replaceAll(
+                    '_',
+                    ' ',
+                )
+                .toLowerCase();
+    }
+}
+
+function isMangaAnimeRelation(
+    workType:
+        | 'anime'
+        | 'manga',
+    relation: CatalogRelation,
+): boolean {
+    return (
+        relation.relationType ===
+        'ADAPTATION' &&
+        relation.type !==
+        workType
+    );
+}
 
 export function WorkDetailsPage() {
     const { id } =
@@ -24,7 +92,9 @@ export function WorkDetailsPage() {
         Number(id);
 
     const invalidWorkId =
-        !Number.isInteger(workId) ||
+        !Number.isInteger(
+            workId,
+        ) ||
         workId < 1;
 
     const navigate =
@@ -48,15 +118,27 @@ export function WorkDetailsPage() {
             return;
         }
 
-        getCatalogDetails(workId)
-            .then(setWork)
+        getCatalogDetails(
+            workId,
+        )
+            .then((data) => {
+                setWork(
+                    data,
+                );
+
+                setError(
+                    null,
+                );
+            })
             .catch(() => {
                 setError(
                     'Impossible de charger cette œuvre.',
                 );
             })
             .finally(() => {
-                setLoading(false);
+                setLoading(
+                    false,
+                );
             });
     }, [
         workId,
@@ -65,13 +147,17 @@ export function WorkDetailsPage() {
 
     if (invalidWorkId) {
         return (
-            <p>Œuvre invalide.</p>
+            <p>
+                Œuvre invalide.
+            </p>
         );
     }
 
     if (loading) {
         return (
-            <p>Chargement...</p>
+            <p>
+                Chargement...
+            </p>
         );
     }
 
@@ -87,8 +173,11 @@ export function WorkDetailsPage() {
         );
     }
 
+    const currentWork =
+        work;
+
     const description =
-        work.description
+        currentWork.description
             ?.replace(
                 /<br\s*\/?>/gi,
                 '\n',
@@ -97,6 +186,103 @@ export function WorkDetailsPage() {
                 /<[^>]+>/g,
                 '',
             );
+
+    const mangaAnimeRelations =
+        currentWork.relations.filter(
+            (relation) =>
+                isMangaAnimeRelation(
+                    currentWork.type,
+                    relation,
+                ),
+        );
+
+    const otherRelations =
+        currentWork.relations.filter(
+            (relation) =>
+                !isMangaAnimeRelation(
+                    currentWork.type,
+                    relation,
+                ),
+        );
+
+    function renderRelation(
+        relation:
+            CatalogRelation,
+        highlighted = false,
+    ) {
+        return (
+            <article
+                key={`${relation.relationType}-${relation.id}`}
+                className={
+                    highlighted
+                        ? 'relation-card relation-card-highlight'
+                        : 'relation-card'
+                }
+            >
+                {relation.imageUrl && (
+                    <img
+                        src={
+                            relation.imageUrl
+                        }
+                        alt={
+                            relation.title
+                        }
+                        className="relation-cover"
+                    />
+                )}
+
+                <div className="relation-content">
+                    <span className="media-type">
+                        {
+                            relation.type
+                        }
+                    </span>
+
+                    <h4>
+                        {
+                            relation.title
+                        }
+                    </h4>
+
+                    <p>
+                        {getRelationLabel(
+                            relation.relationType,
+                        )}
+                    </p>
+
+                    {relation.format && (
+                        <p>
+                            Format :{' '}
+                            {
+                                relation.format
+                            }
+                        </p>
+                    )}
+
+                    {highlighted && (
+                        <p className="relation-adaptation">
+                            Adaptation{' '}
+                            {currentWork.type ===
+                                'anime'
+                                ? 'manga'
+                                : 'anime'}
+                        </p>
+                    )}
+
+                    <button
+                        type="button"
+                        onClick={() =>
+                            navigate(
+                                `/catalog/${relation.id}`,
+                            )
+                        }
+                    >
+                        Voir la fiche
+                    </button>
+                </div>
+            </article>
+        );
+    }
 
     return (
         <main className="work-details">
@@ -110,13 +296,13 @@ export function WorkDetailsPage() {
             </button>
 
             <div className="work-details-content">
-                {work.imageUrl && (
+                {currentWork.imageUrl && (
                     <img
                         src={
-                            work.imageUrl
+                            currentWork.imageUrl
                         }
                         alt={
-                            work.title
+                            currentWork.title
                         }
                         className="work-cover"
                     />
@@ -124,62 +310,66 @@ export function WorkDetailsPage() {
 
                 <div>
                     <span className="media-type">
-                        {work.type}
+                        {
+                            currentWork.type
+                        }
                     </span>
 
                     <h2>
-                        {work.title}
+                        {
+                            currentWork.title
+                        }
                     </h2>
 
                     <p>
-                        {work.genres.join(
+                        {currentWork.genres.join(
                             ' • ',
                         )}
                     </p>
 
                     <p>
-                        {work.type ===
+                        {currentWork.type ===
                             'anime'
                             ? 'Épisodes'
                             : 'Chapitres'}
                         {' : '}
-                        {work.total ??
+                        {currentWork.total ??
                             'Inconnu'}
                     </p>
 
-                    {work.seasonYear && (
+                    {currentWork.seasonYear && (
                         <p>
                             Année :{' '}
                             {
-                                work.seasonYear
+                                currentWork.seasonYear
                             }
                         </p>
                     )}
 
-                    {work.format && (
+                    {currentWork.format && (
                         <p>
                             Format :{' '}
                             {
-                                work.format
+                                currentWork.format
                             }
                         </p>
                     )}
 
-                    {work.status && (
+                    {currentWork.status && (
                         <p>
                             Statut :{' '}
                             {
-                                work.status
+                                currentWork.status
                             }
                         </p>
                     )}
 
-                    {work.averageScore !==
+                    {currentWork.averageScore !==
                         null && (
                             <p>
                                 Score AniList :{' '}
                                 {
-                                    work.averageScore
+                                    currentWork.averageScore
                                 }
                                 /100
                             </p>
@@ -195,6 +385,66 @@ export function WorkDetailsPage() {
                     </p>
                 </div>
             </div>
+
+            {mangaAnimeRelations.length >
+                0 && (
+                    <section className="relations-section">
+                        <h3>
+                            Adaptation manga / anime
+                        </h3>
+
+                        <p>
+                            Cette œuvre possède une
+                            adaptation directement liée.
+                        </p>
+
+                        <div className="relations-grid">
+                            {mangaAnimeRelations.map(
+                                (
+                                    relation,
+                                ) =>
+                                    renderRelation(
+                                        relation,
+                                        true,
+                                    ),
+                            )}
+                        </div>
+                    </section>
+                )}
+
+            {otherRelations.length >
+                0 && (
+                    <section className="relations-section">
+                        <h3>
+                            Œuvres liées
+                        </h3>
+
+                        <div className="relations-grid">
+                            {otherRelations.map(
+                                (
+                                    relation,
+                                ) =>
+                                    renderRelation(
+                                        relation,
+                                    ),
+                            )}
+                        </div>
+                    </section>
+                )}
+
+            {currentWork.relations.length ===
+                0 && (
+                    <section className="relations-section">
+                        <h3>
+                            Œuvres liées
+                        </h3>
+
+                        <p>
+                            Aucune œuvre liée
+                            disponible.
+                        </p>
+                    </section>
+                )}
         </main>
     );
 }

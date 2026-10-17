@@ -150,6 +150,7 @@ export class FakeCatalogAdapter
             format: null,
             seasonYear: null,
             averageScore: null,
+            relations: [],
         };
     }
 

@@ -12,6 +12,15 @@ export interface CatalogPageResult {
     hasNextPage: boolean;
 }
 
+export interface CatalogRelation {
+    id: number;
+    title: string;
+    type: 'anime' | 'manga';
+    relationType: string;
+    imageUrl: string | null;
+    format: string | null;
+}
+
 export interface CatalogDetails
     extends CatalogItem {
     description: string | null;
@@ -20,6 +29,7 @@ export interface CatalogDetails
     format: string | null;
     seasonYear: number | null;
     averageScore: number | null;
+    relations: CatalogRelation[];
 }
 
 export interface CalendarRelease {
