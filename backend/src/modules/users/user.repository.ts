@@ -12,6 +12,8 @@ export interface UserRepository {
         id: number,
     ): Promise<User | undefined>;
 
+    getAll(): Promise<User[]>;
+
     create(
         input: CreateUserInput,
     ): Promise<User>;

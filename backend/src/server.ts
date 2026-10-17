@@ -58,7 +58,16 @@ import {
 
 import {
     createRequireAuth,
+    requireAdmin,
 } from './modules/users/auth.middleware.js';
+
+import {
+    AdminService,
+} from './modules/users/admin.service.js';
+
+import {
+    createAdminRouter,
+} from './modules/users/admin.routes.js';
 
 const app = express();
 const PORT = 3000;
@@ -109,6 +118,11 @@ const authService =
         tokenService,
     );
 
+const adminService =
+    new AdminService(
+        userRepository,
+    );
+
 app.get('/health', (_req, res) => {
     res.json({
         status: 'ok',
@@ -150,6 +164,15 @@ app.use(
     createAuthRouter(
         authService,
         requireAuth,
+    ),
+);
+
+app.use(
+    '/admin',
+    createAdminRouter(
+        adminService,
+        requireAuth,
+        requireAdmin,
     ),
 );
 

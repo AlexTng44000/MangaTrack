@@ -84,4 +84,20 @@ export class PostgresUserRepository
 
         return result.rows[0];
     }
+    async getAll(): Promise<User[]> {
+        const result =
+            await this.db.query<User>(
+                `
+                SELECT
+                    id,
+                    email,
+                    password_hash AS "passwordHash",
+                    role
+                FROM users
+                ORDER BY id
+                `,
+            );
+
+        return result.rows;
+    }
 }
