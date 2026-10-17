@@ -34,6 +34,10 @@ import {
 } from './pages/RecommendationsPage';
 
 import {
+  CatchUpPage,
+} from './pages/CatchUpPage';
+
+import {
   AdminPage,
 } from './pages/AdminPage';
 
@@ -134,6 +138,14 @@ function App() {
 
           <button
             onClick={() =>
+              navigate('/catch-up')
+            }
+          >
+            Rattrapage
+          </button>
+
+          <button
+            onClick={() =>
               navigate('/reminders')
             }
           >
@@ -205,6 +217,13 @@ function App() {
           path="/recommendations"
           element={
             <RecommendationsPage />
+          }
+        />
+
+        <Route
+          path="/catch-up"
+          element={
+            <CatchUpPage />
           }
         />
 
