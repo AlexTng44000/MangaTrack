@@ -37,6 +37,16 @@ CREATE TABLE IF NOT EXISTS library_entries (
     progress INTEGER NOT NULL DEFAULT 0
         CHECK (progress >= 0),
 
+    resume_catalog_item_id INTEGER
+        CHECK (
+            resume_catalog_item_id > 0
+        ),
+
+    resume_chapter INTEGER
+        CHECK (
+            resume_chapter > 0
+        ),
+
     created_at TIMESTAMP NOT NULL
         DEFAULT CURRENT_TIMESTAMP,
 
@@ -74,3 +84,23 @@ CREATE TABLE IF NOT EXISTS reminders (
     created_at TIMESTAMPTZ NOT NULL
         DEFAULT CURRENT_TIMESTAMP
 );
+
+/*
+ * Compatibilité avec une base déjà existante.
+ * CREATE TABLE IF NOT EXISTS ne modifie pas une table
+ * qui existe déjà.
+ */
+
+ALTER TABLE library_entries
+    ADD COLUMN IF NOT EXISTS
+        resume_catalog_item_id INTEGER
+        CHECK (
+            resume_catalog_item_id > 0
+        );
+
+ALTER TABLE library_entries
+    ADD COLUMN IF NOT EXISTS
+        resume_chapter INTEGER
+        CHECK (
+            resume_chapter > 0
+        );

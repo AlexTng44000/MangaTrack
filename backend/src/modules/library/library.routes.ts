@@ -1,19 +1,19 @@
 import { Router } from 'express';
 
-import type { LibraryService } from './library.service.js';
-
-import {
-    createLibraryEntrySchema,
-    updateFavoriteSchema,
-} from './library.schema.js';
-
 import type {
     RequestHandler,
 } from 'express';
 
+import type {
+    LibraryService,
+} from './library.service.js';
+
 import {
+    createLibraryEntrySchema,
+    updateFavoriteSchema,
     updateLibraryStatusSchema,
     updateRatingSchema,
+    updateResumePointSchema,
 } from './library.schema.js';
 
 export function createLibraryRouter(
@@ -291,6 +291,75 @@ export function createLibraryRouter(
                     return res.status(404).json({
                         error:
                             'Œuvre introuvable dans la bibliothèque',
+                    });
+                }
+
+                throw error;
+            }
+        },
+    );
+
+    router.patch(
+        '/:id/resume',
+        requireAuth,
+        async (req, res) => {
+            const id =
+                Number(req.params.id);
+
+            if (
+                !Number.isInteger(id) ||
+                id < 1
+            ) {
+                return res.status(400).json({
+                    error:
+                        'Identifiant invalide',
+                });
+            }
+
+            const parsed =
+                updateResumePointSchema.safeParse(
+                    req.body,
+                );
+
+            if (!parsed.success) {
+                return res.status(400).json({
+                    error:
+                        'Point de reprise invalide',
+                    details:
+                        parsed.error.flatten(),
+                });
+            }
+
+            try {
+                const entry =
+                    await libraryService
+                        .updateResumePoint(
+                            id,
+                            req.auth!.userId,
+                            parsed.data,
+                        );
+
+                return res.json(entry);
+            } catch (error) {
+                if (
+                    error instanceof Error &&
+                    error.message ===
+                    'LIBRARY_ENTRY_NOT_FOUND'
+                ) {
+                    return res.status(404).json({
+                        error:
+                            'Œuvre introuvable dans la bibliothèque',
+                    });
+                }
+
+                if (
+                    error instanceof Error &&
+                    error.message ===
+                    'INVALID_RESUME_POINT'
+                ) {
+                    return res.status(400).json({
+                        error:
+                            'Point de reprise invalide',
                     });
                 }
 

@@ -2,6 +2,7 @@ import type {
     CreateLibraryEntryInput,
     LibraryEntry,
     LibraryStatus,
+    UpdateResumePointInput,
 } from './library.types.js';
 
 export interface LibraryRepository {
@@ -46,5 +47,11 @@ export interface LibraryRepository {
         id: number,
         userId: number,
         rating: number | null,
+    ): Promise<LibraryEntry | null>;
+
+    updateResumePoint(
+        id: number,
+        userId: number,
+        input: UpdateResumePointInput,
     ): Promise<LibraryEntry | null>;
 }

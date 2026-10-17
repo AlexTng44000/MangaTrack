@@ -12,6 +12,12 @@ export interface LibraryEntry {
     progress: number;
     isFavorite: boolean;
     rating: number | null;
+
+    resumeCatalogItemId:
+    number | null;
+
+    resumeChapter:
+    number | null;
 }
 
 export interface LibraryStats {

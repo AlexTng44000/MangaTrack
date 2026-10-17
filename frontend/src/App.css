@@ -290,8 +290,63 @@ h2 {
   font-weight: 600;
 }
 
+.relation-content button:disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+
 .relation-adaptation {
   font-weight: 600;
+}
+
+/* Point de reprise */
+
+.resume-point {
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top: 1px solid #333;
+}
+
+.resume-point h5 {
+  margin: 0 0 8px;
+  font-size: 1rem;
+}
+
+.resume-point>p {
+  margin: 6px 0;
+  font-size: 0.9rem;
+}
+
+.resume-current {
+  margin-top: 10px;
+  font-weight: 600;
+}
+
+.resume-point-form {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.resume-point-form input {
+  min-width: 0;
+  flex: 1;
+  padding: 9px 10px;
+  border: 1px solid #333;
+  border-radius: 8px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+}
+
+.resume-point-form button {
+  margin-top: 0;
+  white-space: nowrap;
+}
+
+.resume-delete {
+  width: 100%;
+  margin-top: 8px;
 }
 
 .reminders-section {
@@ -526,6 +581,14 @@ h2 {
   .relation-cover {
     width: 80px;
     height: 115px;
+  }
+
+  .resume-point-form {
+    flex-direction: column;
+  }
+
+  .resume-point-form button {
+    width: 100%;
   }
 
   .reminder-card {

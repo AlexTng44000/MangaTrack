@@ -40,3 +40,37 @@ export const updateRatingSchema =
                 .max(10)
                 .nullable(),
     });
+
+export const updateResumePointSchema =
+    z.object({
+        resumeCatalogItemId:
+            z.number()
+                .int()
+                .positive()
+                .nullable(),
+
+        resumeChapter:
+            z.number()
+                .int()
+                .positive()
+                .nullable(),
+    })
+        .refine(
+            (data) =>
+                (
+                    data.resumeCatalogItemId ===
+                    null &&
+                    data.resumeChapter ===
+                    null
+                ) ||
+                (
+                    data.resumeCatalogItemId !==
+                    null &&
+                    data.resumeChapter !==
+                    null
+                ),
+            {
+                message:
+                    'Le manga de reprise et le chapitre doivent être renseignés ensemble.',
+            },
+        );

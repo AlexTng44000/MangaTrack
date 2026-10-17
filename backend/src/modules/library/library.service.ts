@@ -6,6 +6,7 @@ import type {
     CreateLibraryEntryInput,
     LibraryEntry,
     LibraryStatus,
+    UpdateResumePointInput,
 } from './library.types.js';
 
 export class LibraryService {
@@ -123,6 +124,62 @@ export class LibraryService {
                 id,
                 userId,
                 rating,
+            );
+
+        if (!entry) {
+            throw new Error(
+                'LIBRARY_ENTRY_NOT_FOUND',
+            );
+        }
+
+        return entry;
+    }
+
+    async updateResumePoint(
+        id: number,
+        userId: number,
+        input: UpdateResumePointInput,
+    ): Promise<LibraryEntry> {
+        const bothNull =
+            input.resumeCatalogItemId === null &&
+            input.resumeChapter === null;
+
+        const bothDefined =
+            input.resumeCatalogItemId !== null &&
+            input.resumeChapter !== null;
+
+        if (
+            !bothNull &&
+            !bothDefined
+        ) {
+            throw new Error(
+                'INVALID_RESUME_POINT',
+            );
+        }
+
+        if (
+            bothDefined &&
+            (
+                !Number.isInteger(
+                    input.resumeCatalogItemId,
+                ) ||
+                input.resumeCatalogItemId! <= 0 ||
+                !Number.isInteger(
+                    input.resumeChapter,
+                ) ||
+                input.resumeChapter! <= 0
+            )
+        ) {
+            throw new Error(
+                'INVALID_RESUME_POINT',
+            );
+        }
+
+        const entry =
+            await this.repository.updateResumePoint(
+                id,
+                userId,
+                input,
             );
 
         if (!entry) {

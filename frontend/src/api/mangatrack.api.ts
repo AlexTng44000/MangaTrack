@@ -487,6 +487,40 @@ export async function updateLibraryRating(
     return response.json();
 }
 
+export async function updateResumePoint(
+    id: number,
+    resumeCatalogItemId: number | null,
+    resumeChapter: number | null,
+): Promise<LibraryEntry> {
+    const response =
+        await authenticatedFetch(
+            `${API_URL}/library/${id}/resume`,
+            {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type':
+                        'application/json',
+                },
+                body: JSON.stringify({
+                    resumeCatalogItemId,
+                    resumeChapter,
+                }),
+            },
+        );
+
+    const data =
+        await response.json();
+
+    if (!response.ok) {
+        throw new Error(
+            data.error ??
+            'Impossible de modifier le point de reprise',
+        );
+    }
+
+    return data;
+}
+
 export async function getCatalogDetails(
     id: number,
 ): Promise<CatalogDetails> {

@@ -10,12 +10,18 @@ import {
 
 import {
     getCatalogDetails,
+    getLibrary,
+    updateResumePoint,
 } from '../api/mangatrack.api';
 
 import type {
     CatalogDetails,
     CatalogRelation,
 } from '../types/catalog';
+
+import type {
+    LibraryEntry,
+} from '../types/library';
 
 function getRelationLabel(
     relationType: string,
@@ -105,8 +111,53 @@ export function WorkDetailsPage() {
             null,
         );
 
-    const [loading, setLoading] =
-        useState(true);
+    const [
+        loadedWorkId,
+        setLoadedWorkId,
+    ] =
+        useState<number | null>(
+            null,
+        );
+
+    const [
+        libraryEntry,
+        setLibraryEntry,
+    ] =
+        useState<LibraryEntry | null>(
+            null,
+        );
+
+    const [
+        resumeChapterInputs,
+        setResumeChapterInputs,
+    ] =
+        useState<
+            Record<number, string>
+        >({});
+
+    const [
+        savingResumeId,
+        setSavingResumeId,
+    ] =
+        useState<number | null>(
+            null,
+        );
+
+    const [
+        resumeMessage,
+        setResumeMessage,
+    ] =
+        useState<string | null>(
+            null,
+        );
+
+    const [
+        resumeError,
+        setResumeError,
+    ] =
+        useState<string | null>(
+            null,
+        );
 
     const [error, setError] =
         useState<string | null>(
@@ -118,32 +169,247 @@ export function WorkDetailsPage() {
             return;
         }
 
-        getCatalogDetails(
-            workId,
-        )
-            .then((data) => {
+        let cancelled =
+            false;
+
+        Promise.all([
+            getCatalogDetails(
+                workId,
+            ),
+            getLibrary(),
+        ])
+            .then(
+                ([
+                    details,
+                    library,
+                ]) => {
+                    if (cancelled) {
+                        return;
+                    }
+
+                    const entry =
+                        library.find(
+                            (
+                                current,
+                            ) =>
+                                current.catalogItemId ===
+                                workId,
+                        ) ??
+                        null;
+
+                    setWork(
+                        details,
+                    );
+
+                    setLibraryEntry(
+                        entry,
+                    );
+
+                    setError(
+                        null,
+                    );
+
+                    setResumeMessage(
+                        null,
+                    );
+
+                    setResumeError(
+                        null,
+                    );
+
+                    if (
+                        entry?.resumeCatalogItemId !=
+                        null &&
+                        entry.resumeChapter !=
+                        null
+                    ) {
+                        setResumeChapterInputs({
+                            [entry.resumeCatalogItemId]:
+                                String(
+                                    entry.resumeChapter,
+                                ),
+                        });
+                    } else {
+                        setResumeChapterInputs(
+                            {},
+                        );
+                    }
+
+                    setLoadedWorkId(
+                        workId,
+                    );
+                },
+            )
+            .catch(() => {
+                if (cancelled) {
+                    return;
+                }
+
                 setWork(
-                    data,
+                    null,
+                );
+
+                setLibraryEntry(
+                    null,
                 );
 
                 setError(
-                    null,
-                );
-            })
-            .catch(() => {
-                setError(
                     'Impossible de charger cette œuvre.',
                 );
-            })
-            .finally(() => {
-                setLoading(
-                    false,
+
+                setLoadedWorkId(
+                    workId,
                 );
             });
+
+        return () => {
+            cancelled =
+                true;
+        };
     }, [
         workId,
         invalidWorkId,
     ]);
+
+    async function saveResumePoint(
+        relation: CatalogRelation,
+    ) {
+        if (!libraryEntry) {
+            return;
+        }
+
+        const value =
+            resumeChapterInputs[
+            relation.id
+            ] ??
+            '';
+
+        const chapter =
+            Number(
+                value,
+            );
+
+        if (
+            !Number.isInteger(
+                chapter,
+            ) ||
+            chapter < 1
+        ) {
+            setResumeError(
+                'Le chapitre doit être un nombre entier supérieur à 0.',
+            );
+
+            setResumeMessage(
+                null,
+            );
+
+            return;
+        }
+
+        setSavingResumeId(
+            relation.id,
+        );
+
+        setResumeError(
+            null,
+        );
+
+        setResumeMessage(
+            null,
+        );
+
+        try {
+            const updated =
+                await updateResumePoint(
+                    libraryEntry.id,
+                    relation.id,
+                    chapter,
+                );
+
+            setLibraryEntry(
+                updated,
+            );
+
+            setResumeChapterInputs(
+                (current) => ({
+                    ...current,
+                    [relation.id]:
+                        String(
+                            chapter,
+                        ),
+                }),
+            );
+
+            setResumeMessage(
+                `Point de reprise enregistré : ${relation.title}, chapitre ${chapter}.`,
+            );
+        } catch (err) {
+            setResumeError(
+                err instanceof Error
+                    ? err.message
+                    : 'Impossible d’enregistrer le point de reprise.',
+            );
+        } finally {
+            setSavingResumeId(
+                null,
+            );
+        }
+    }
+
+    async function clearResumePoint(
+        relation: CatalogRelation,
+    ) {
+        if (!libraryEntry) {
+            return;
+        }
+
+        setSavingResumeId(
+            relation.id,
+        );
+
+        setResumeError(
+            null,
+        );
+
+        setResumeMessage(
+            null,
+        );
+
+        try {
+            const updated =
+                await updateResumePoint(
+                    libraryEntry.id,
+                    null,
+                    null,
+                );
+
+            setLibraryEntry(
+                updated,
+            );
+
+            setResumeChapterInputs(
+                (current) => ({
+                    ...current,
+                    [relation.id]:
+                        '',
+                }),
+            );
+
+            setResumeMessage(
+                'Point de reprise supprimé.',
+            );
+        } catch (err) {
+            setResumeError(
+                err instanceof Error
+                    ? err.message
+                    : 'Impossible de supprimer le point de reprise.',
+            );
+        } finally {
+            setSavingResumeId(
+                null,
+            );
+        }
+    }
 
     if (invalidWorkId) {
         return (
@@ -153,7 +419,10 @@ export function WorkDetailsPage() {
         );
     }
 
-    if (loading) {
+    if (
+        loadedWorkId !==
+        workId
+    ) {
         return (
             <p>
                 Chargement...
@@ -210,6 +479,29 @@ export function WorkDetailsPage() {
             CatalogRelation,
         highlighted = false,
     ) {
+        const canSetResumePoint =
+            highlighted &&
+            currentWork.type ===
+            'anime' &&
+            relation.type ===
+            'manga' &&
+            libraryEntry !==
+            null;
+
+        const isCurrentResumePoint =
+            libraryEntry
+                ?.resumeCatalogItemId ===
+            relation.id &&
+            libraryEntry
+                .resumeChapter !=
+            null;
+
+        const chapterInput =
+            resumeChapterInputs[
+            relation.id
+            ] ??
+            '';
+
         return (
             <article
                 key={`${relation.relationType}-${relation.id}`}
@@ -267,6 +559,105 @@ export function WorkDetailsPage() {
                                 ? 'manga'
                                 : 'anime'}
                         </p>
+                    )}
+
+                    {canSetResumePoint && (
+                        <div className="resume-point">
+                            <h5>
+                                Point de reprise manga
+                            </h5>
+
+                            <p>
+                                Indique manuellement le
+                                chapitre où reprendre après
+                                l’anime.
+                            </p>
+
+                            {isCurrentResumePoint && (
+                                <p className="resume-current">
+                                    Point actuel : chapitre{' '}
+                                    <strong>
+                                        {
+                                            libraryEntry.resumeChapter
+                                        }
+                                    </strong>
+                                </p>
+                            )}
+
+                            <div className="resume-point-form">
+                                <input
+                                    type="number"
+                                    min="1"
+                                    step="1"
+                                    inputMode="numeric"
+                                    placeholder="Ex. 34"
+                                    value={
+                                        chapterInput
+                                    }
+                                    onChange={(
+                                        event,
+                                    ) => {
+                                        setResumeChapterInputs(
+                                            (
+                                                current,
+                                            ) => ({
+                                                ...current,
+                                                [relation.id]:
+                                                    event
+                                                        .target
+                                                        .value,
+                                            }),
+                                        );
+
+                                        setResumeError(
+                                            null,
+                                        );
+
+                                        setResumeMessage(
+                                            null,
+                                        );
+                                    }}
+                                />
+
+                                <button
+                                    type="button"
+                                    disabled={
+                                        savingResumeId ===
+                                        relation.id
+                                    }
+                                    onClick={() =>
+                                        saveResumePoint(
+                                            relation,
+                                        )
+                                    }
+                                >
+                                    {savingResumeId ===
+                                        relation.id
+                                        ? 'Enregistrement...'
+                                        : isCurrentResumePoint
+                                            ? 'Modifier'
+                                            : 'Enregistrer'}
+                                </button>
+                            </div>
+
+                            {isCurrentResumePoint && (
+                                <button
+                                    type="button"
+                                    className="resume-delete"
+                                    disabled={
+                                        savingResumeId ===
+                                        relation.id
+                                    }
+                                    onClick={() =>
+                                        clearResumePoint(
+                                            relation,
+                                        )
+                                    }
+                                >
+                                    Supprimer le point de reprise
+                                </button>
+                            )}
+                        </div>
                     )}
 
                     <button
@@ -385,6 +776,22 @@ export function WorkDetailsPage() {
                     </p>
                 </div>
             </div>
+
+            {resumeMessage && (
+                <p className="success-message">
+                    {
+                        resumeMessage
+                    }
+                </p>
+            )}
+
+            {resumeError && (
+                <p className="error-message">
+                    {
+                        resumeError
+                    }
+                </p>
+            )}
 
             {mangaAnimeRelations.length >
                 0 && (
