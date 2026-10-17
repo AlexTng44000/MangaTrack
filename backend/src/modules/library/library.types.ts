@@ -10,8 +10,8 @@ export interface LibraryEntry {
     catalogItemId: number;
     status: LibraryStatus;
     progress: number;
+    isFavorite: boolean;
 }
-
 export interface CreateLibraryEntryInput {
     catalogItemId: number;
     status: LibraryStatus;

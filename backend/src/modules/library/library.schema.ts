@@ -24,3 +24,9 @@ export const updateLibraryStatusSchema =
             'abandonne',
         ]),
     });
+
+export const updateFavoriteSchema =
+    z.object({
+        isFavorite:
+            z.boolean(),
+    });

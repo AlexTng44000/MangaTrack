@@ -29,7 +29,8 @@ export class PostgresLibraryRepository
                     user_id AS "userId",
                     catalog_item_id AS "catalogItemId",
                     status,
-                    progress
+                    progress,
+                    is_favorite AS "isFavorite"
                 FROM library_entries
                 WHERE user_id = $1
                 ORDER BY id
@@ -52,10 +53,11 @@ export class PostgresLibraryRepository
                     user_id AS "userId",
                     catalog_item_id AS "catalogItemId",
                     status,
-                    progress
+                    progress,
+                    is_favorite AS "isFavorite"
                 FROM library_entries
                 WHERE id = $1
-                  AND user_id = $2
+                AND user_id = $2
                 `,
                 [
                     id,
@@ -91,7 +93,8 @@ export class PostgresLibraryRepository
                     user_id AS "userId",
                     catalog_item_id AS "catalogItemId",
                     status,
-                    progress
+                    progress,
+                    is_favorite AS "isFavorite"
                 `,
                 [
                     userId,
@@ -123,14 +126,15 @@ export class PostgresLibraryRepository
                 UPDATE library_entries
                 SET progress = $1
                 WHERE id = $2
-                  AND user_id = $3
+                AND user_id = $3
 
                 RETURNING
                     id,
                     user_id AS "userId",
                     catalog_item_id AS "catalogItemId",
                     status,
-                    progress
+                    progress,
+                    is_favorite AS "isFavorite"
                 `,
                 [
                     progress,
@@ -171,18 +175,20 @@ export class PostgresLibraryRepository
         status: LibraryStatus,
     ): Promise<LibraryEntry | null> {
         const result =
-            await this.db.query(
+            await this.db.query<LibraryEntry>(
                 `
                 UPDATE library_entries
                 SET status = $1
                 WHERE id = $2
                 AND user_id = $3
+
                 RETURNING
                     id,
-                    user_id,
-                    catalog_item_id,
+                    user_id AS "userId",
+                    catalog_item_id AS "catalogItemId",
                     status,
-                    progress
+                    progress,
+                    is_favorite AS "isFavorite"
                 `,
                 [
                     status,
@@ -191,21 +197,37 @@ export class PostgresLibraryRepository
                 ],
             );
 
-        if (result.rowCount === 0) {
-            return null;
-        }
-
-        const row =
-            result.rows[0];
-
-        return {
-            id: row.id,
-            userId: row.user_id,
-            catalogItemId:
-                row.catalog_item_id,
-            status: row.status,
-            progress: row.progress,
-        };
+        return result.rows[0] ?? null;
     }
 
+    async updateFavorite(
+        id: number,
+        userId: number,
+        isFavorite: boolean,
+    ): Promise<LibraryEntry | null> {
+        const result =
+            await this.db.query<LibraryEntry>(
+                `
+                UPDATE library_entries
+                SET is_favorite = $1
+                WHERE id = $2
+                AND user_id = $3
+
+                RETURNING
+                    id,
+                    user_id AS "userId",
+                    catalog_item_id AS "catalogItemId",
+                    status,
+                    progress,
+                    is_favorite AS "isFavorite"
+                `,
+                [
+                    isFavorite,
+                    id,
+                    userId,
+                ],
+            );
+
+        return result.rows[0] ?? null;
+    }
 }

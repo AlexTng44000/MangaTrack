@@ -10,4 +10,5 @@ export interface LibraryEntry {
     catalogItemId: number;
     status: LibraryStatus;
     progress: number;
+    isFavorite: boolean;
 }

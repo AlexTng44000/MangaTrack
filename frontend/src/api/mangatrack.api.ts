@@ -276,3 +276,31 @@ export async function updateLibraryStatus(
 
     return response.json();
 }
+
+export async function updateLibraryFavorite(
+    id: number,
+    isFavorite: boolean,
+): Promise<LibraryEntry> {
+    const response =
+        await authenticatedFetch(
+            `${API_URL}/library/${id}/favorite`,
+            {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type':
+                        'application/json',
+                },
+                body: JSON.stringify({
+                    isFavorite,
+                }),
+            },
+        );
+
+    if (!response.ok) {
+        throw new Error(
+            'Impossible de modifier le favori',
+        );
+    }
+
+    return response.json();
+}

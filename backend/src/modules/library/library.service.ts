@@ -91,4 +91,25 @@ export class LibraryService {
 
         return entry;
     }
+
+    async updateFavorite(
+        id: number,
+        userId: number,
+        isFavorite: boolean,
+    ): Promise<LibraryEntry> {
+        const entry =
+            await this.repository.updateFavorite(
+                id,
+                userId,
+                isFavorite,
+            );
+
+        if (!entry) {
+            throw new Error(
+                'LIBRARY_ENTRY_NOT_FOUND',
+            );
+        }
+
+        return entry;
+    }
 }

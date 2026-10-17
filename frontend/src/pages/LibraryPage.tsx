@@ -7,6 +7,7 @@ import {
     deleteLibraryEntry,
     getCatalog,
     getLibrary,
+    updateLibraryFavorite,
     updateLibraryStatus,
     updateProgress,
 } from '../api/mangatrack.api';
@@ -76,7 +77,31 @@ export function LibraryPage() {
     if (loading) {
         return <p>Chargement...</p>;
     }
+    async function handleFavoriteToggle(
+        entry: LibraryEntry,
+    ) {
+        try {
+            const updatedEntry =
+                await updateLibraryFavorite(
+                    entry.id,
+                    !entry.isFavorite,
+                );
 
+            setLibrary(
+                (currentLibrary) =>
+                    currentLibrary.map(
+                        (item) =>
+                            item.id === entry.id
+                                ? updatedEntry
+                                : item,
+                    ),
+            );
+        } catch {
+            alert(
+                'Impossible de modifier le favori.',
+            );
+        }
+    }
     return (
         <main>
             <h2>Ma bibliothèque</h2>
@@ -102,7 +127,21 @@ export function LibraryPage() {
                                 {work?.title ??
                                     `Œuvre #${entry.catalogItemId}`}
                             </h3>
-
+                            <button
+                                type="button"
+                                onClick={() =>
+                                    handleFavoriteToggle(entry)
+                                }
+                                aria-label={
+                                    entry.isFavorite
+                                        ? 'Retirer des favoris'
+                                        : 'Ajouter aux favoris'
+                                }
+                            >
+                                {entry.isFavorite
+                                    ? '♥ Favori'
+                                    : '♡ Ajouter aux favoris'}
+                            </button>
                             <label>
                                 Statut :{' '}
                                 <select

@@ -13,6 +13,7 @@ CREATE TABLE IF NOT EXISTS library_entries (
     REFERENCES users(id)
     ON DELETE CASCADE,
     catalog_item_id INTEGER NOT NULL,
+    is_favorite BOOLEAN NOT NULL DEFAULT FALSE
     status VARCHAR(30) NOT NULL
         CHECK (
             status IN (
