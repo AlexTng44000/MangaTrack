@@ -65,6 +65,20 @@ export function LibraryPage() {
     const [loading, setLoading] =
         useState(true);
 
+    const [
+        statusFilter,
+        setStatusFilter,
+    ] =
+        useState<
+            '' | LibraryStatus
+        >('');
+
+    const [
+        favoriteOnly,
+        setFavoriteOnly,
+    ] =
+        useState(false);
+
     const navigate =
         useNavigate();
 
@@ -382,6 +396,39 @@ export function LibraryPage() {
         }
     }
 
+    const filteredLibrary =
+        library.filter(
+            (entry) => {
+                const matchesStatus =
+                    statusFilter === '' ||
+                    entry.status ===
+                    statusFilter;
+
+                const matchesFavorite =
+                    !favoriteOnly ||
+                    entry.isFavorite;
+
+                return (
+                    matchesStatus &&
+                    matchesFavorite
+                );
+            },
+        );
+
+    const hasActiveFilters =
+        statusFilter !== '' ||
+        favoriteOnly;
+
+    function resetFilters() {
+        setStatusFilter(
+            '',
+        );
+
+        setFavoriteOnly(
+            false,
+        );
+    }
+
     if (loading) {
         return (
             <main className="library-page">
@@ -426,6 +473,121 @@ export function LibraryPage() {
                 </div>
             </section>
 
+            {library.length > 0 && (
+                <section className="library-filters">
+                    <div className="library-filters-copy">
+                        <span className="page-eyebrow">
+                            Filtres
+                        </span>
+
+                        <h3>
+                            Affiner ma bibliothèque
+                        </h3>
+                    </div>
+
+                    <div className="library-filter-controls">
+                        <label className="library-filter-field">
+                            <span>
+                                Statut
+                            </span>
+
+                            <select
+                                value={
+                                    statusFilter
+                                }
+                                onChange={(
+                                    event,
+                                ) =>
+                                    setStatusFilter(
+                                        event
+                                            .target
+                                            .value as
+                                        | ''
+                                        | LibraryStatus,
+                                    )
+                                }
+                            >
+                                <option value="">
+                                    Tous les statuts
+                                </option>
+
+                                <option value="a_commencer">
+                                    À commencer
+                                </option>
+
+                                <option value="en_cours">
+                                    En cours
+                                </option>
+
+                                <option value="termine">
+                                    Terminé
+                                </option>
+
+                                <option value="abandonne">
+                                    Abandonné
+                                </option>
+                            </select>
+                        </label>
+
+                        <button
+                            type="button"
+                            className={
+                                favoriteOnly
+                                    ? 'library-favorite-filter library-favorite-filter-active'
+                                    : 'library-favorite-filter'
+                            }
+                            onClick={() =>
+                                setFavoriteOnly(
+                                    (
+                                        current,
+                                    ) =>
+                                        !current,
+                                )
+                            }
+                            aria-pressed={
+                                favoriteOnly
+                            }
+                        >
+                            {favoriteOnly
+                                ? '♥ Favoris uniquement'
+                                : '♡ Tous / Favoris'}
+                        </button>
+
+                        {hasActiveFilters && (
+                            <button
+                                type="button"
+                                className="library-filter-reset"
+                                onClick={
+                                    resetFilters
+                                }
+                            >
+                                Réinitialiser
+                            </button>
+                        )}
+                    </div>
+
+                    <div className="library-filter-result">
+                        <strong>
+                            {
+                                filteredLibrary.length
+                            }
+                        </strong>
+
+                        <span>
+                            sur{' '}
+                            {
+                                library.length
+                            }{' '}
+                            œuvre
+                            {library.length >
+                                1
+                                ? 's'
+                                : ''}
+                        </span>
+                    </div>
+                </section>
+            )}
+
             {library.length === 0 ? (
                 <section className="library-empty">
                     <span>
@@ -453,9 +615,35 @@ export function LibraryPage() {
                         Explorer le catalogue
                     </button>
                 </section>
+            ) : filteredLibrary.length ===
+                0 ? (
+                <section className="library-empty library-filter-empty">
+                    <span>
+                        Aucun résultat
+                    </span>
+
+                    <h3>
+                        Aucune œuvre ne correspond
+                    </h3>
+
+                    <p>
+                        Modifie les filtres ou
+                        réinitialise-les pour afficher
+                        toute ta bibliothèque.
+                    </p>
+
+                    <button
+                        type="button"
+                        onClick={
+                            resetFilters
+                        }
+                    >
+                        Réinitialiser les filtres
+                    </button>
+                </section>
             ) : (
                 <div className="library-grid">
-                    {library.map(
+                    {filteredLibrary.map(
                         (entry) => {
                             const work =
                                 catalog.find(
