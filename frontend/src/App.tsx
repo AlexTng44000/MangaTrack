@@ -26,6 +26,10 @@ import {
 } from './pages/CalendarPage';
 
 import {
+  StatsPage,
+} from './pages/StatsPage';
+
+import {
   AdminPage,
 } from './pages/AdminPage';
 
@@ -110,6 +114,14 @@ function App() {
 
           <button
             onClick={() =>
+              navigate('/stats')
+            }
+          >
+            Statistiques
+          </button>
+
+          <button
+            onClick={() =>
               navigate('/reminders')
             }
           >
@@ -130,6 +142,7 @@ function App() {
             onClick={() => {
               logout();
               setUser(null);
+
               navigate(
                 '/catalog',
               );
@@ -166,6 +179,13 @@ function App() {
           path="/calendar"
           element={
             <CalendarPage />
+          }
+        />
+
+        <Route
+          path="/stats"
+          element={
+            <StatsPage />
           }
         />
 

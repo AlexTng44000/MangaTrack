@@ -13,3 +13,27 @@ export interface LibraryEntry {
     isFavorite: boolean;
     rating: number | null;
 }
+
+export interface LibraryStats {
+    totalWorks: number;
+    favorites: number;
+    ratedWorks: number;
+    averageRating: number | null;
+
+    statuses: {
+        aCommencer: number;
+        enCours: number;
+        termine: number;
+        abandonne: number;
+    };
+
+    anime: {
+        count: number;
+        progress: number;
+    };
+
+    manga: {
+        count: number;
+        progress: number;
+    };
+}
