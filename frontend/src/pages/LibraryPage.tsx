@@ -5,11 +5,12 @@ import {
 
 import {
     deleteLibraryEntry,
+    getCatalogByIds,
     getLibrary,
     updateLibraryFavorite,
+    updateLibraryRating,
     updateLibraryStatus,
     updateProgress,
-    getCatalogByIds,
 } from '../api/mangatrack.api';
 
 import type {
@@ -173,6 +174,58 @@ export function LibraryPage() {
             );
         }
     }
+
+    async function handleRatingChange(
+        entry: LibraryEntry,
+        rating: number,
+    ) {
+        try {
+            const updatedEntry =
+                await updateLibraryRating(
+                    entry.id,
+                    rating,
+                );
+
+            setLibrary(
+                (currentLibrary) =>
+                    currentLibrary.map(
+                        (item) =>
+                            item.id === entry.id
+                                ? updatedEntry
+                                : item,
+                    ),
+            );
+        } catch {
+            alert(
+                'Impossible de modifier la note.',
+            );
+        }
+    }
+    async function handleRemoveRating(
+        entry: LibraryEntry,
+    ) {
+        try {
+            const updatedEntry =
+                await updateLibraryRating(
+                    entry.id,
+                    null,
+                );
+
+            setLibrary(
+                (currentLibrary) =>
+                    currentLibrary.map(
+                        (item) =>
+                            item.id === entry.id
+                                ? updatedEntry
+                                : item,
+                    ),
+            );
+        } catch {
+            alert(
+                'Impossible de retirer la note.',
+            );
+        }
+    }
     return (
         <main>
             <h2>Ma bibliothèque</h2>
@@ -255,7 +308,55 @@ export function LibraryPage() {
                                 {work?.total != null &&
                                     ` / ${work.total}`}
                             </p>
+                            <div className="rating-control">
+                                <label
+                                    htmlFor={`rating-${entry.id}`}
+                                >
+                                    Ma note :{' '}
+                                    <strong>
+                                        {entry.rating === null
+                                            ? 'Pas encore noté'
+                                            : `${entry.rating} / 10`}
+                                    </strong>
+                                </label>
 
+                                <input
+                                    id={`rating-${entry.id}`}
+                                    type="range"
+                                    min="0"
+                                    max="10"
+                                    step="1"
+                                    value={
+                                        entry.rating ?? 5
+                                    }
+                                    onChange={(event) =>
+                                        handleRatingChange(
+                                            entry,
+                                            Number(
+                                                event.target.value,
+                                            ),
+                                        )
+                                    }
+                                />
+
+                                <div className="rating-scale">
+                                    <span>0</span>
+                                    <span>10</span>
+                                </div>
+
+                                {entry.rating !== null && (
+                                    <button
+                                        type="button"
+                                        onClick={() =>
+                                            handleRemoveRating(
+                                                entry,
+                                            )
+                                        }
+                                    >
+                                        Retirer la note
+                                    </button>
+                                )}
+                            </div>
                             <div className="progress-actions">
                                 <button
                                     onClick={() =>

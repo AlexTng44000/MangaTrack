@@ -41,4 +41,10 @@ export interface LibraryRepository {
         userId: number,
         isFavorite: boolean,
     ): Promise<LibraryEntry | null>;
+
+    updateRating(
+        id: number,
+        userId: number,
+        rating: number | null,
+    ): Promise<LibraryEntry | null>;
 }

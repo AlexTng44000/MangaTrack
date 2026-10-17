@@ -30,7 +30,8 @@ export class PostgresLibraryRepository
                     catalog_item_id AS "catalogItemId",
                     status,
                     progress,
-                    is_favorite AS "isFavorite"
+                    is_favorite AS "isFavorite",
+                    rating
                 FROM library_entries
                 WHERE user_id = $1
                 ORDER BY id
@@ -54,7 +55,8 @@ export class PostgresLibraryRepository
                     catalog_item_id AS "catalogItemId",
                     status,
                     progress,
-                    is_favorite AS "isFavorite"
+                    is_favorite AS "isFavorite",
+                    rating
                 FROM library_entries
                 WHERE id = $1
                 AND user_id = $2
@@ -94,7 +96,8 @@ export class PostgresLibraryRepository
                     catalog_item_id AS "catalogItemId",
                     status,
                     progress,
-                    is_favorite AS "isFavorite"
+                    is_favorite AS "isFavorite",
+                    rating
                 `,
                 [
                     userId,
@@ -134,7 +137,8 @@ export class PostgresLibraryRepository
                     catalog_item_id AS "catalogItemId",
                     status,
                     progress,
-                    is_favorite AS "isFavorite"
+                    is_favorite AS "isFavorite",
+                    rating
                 `,
                 [
                     progress,
@@ -188,7 +192,8 @@ export class PostgresLibraryRepository
                     catalog_item_id AS "catalogItemId",
                     status,
                     progress,
-                    is_favorite AS "isFavorite"
+                    is_favorite AS "isFavorite",
+                    rating
                 `,
                 [
                     status,
@@ -219,10 +224,43 @@ export class PostgresLibraryRepository
                     catalog_item_id AS "catalogItemId",
                     status,
                     progress,
-                    is_favorite AS "isFavorite"
+                    is_favorite AS "isFavorite",
+                    rating
                 `,
                 [
                     isFavorite,
+                    id,
+                    userId,
+                ],
+            );
+
+        return result.rows[0] ?? null;
+    }
+
+    async updateRating(
+        id: number,
+        userId: number,
+        rating: number | null,
+    ): Promise<LibraryEntry | null> {
+        const result =
+            await this.db.query<LibraryEntry>(
+                `
+                UPDATE library_entries
+                SET rating = $1
+                WHERE id = $2
+                AND user_id = $3
+
+                RETURNING
+                    id,
+                    user_id AS "userId",
+                    catalog_item_id AS "catalogItemId",
+                    status,
+                    progress,
+                    is_favorite AS "isFavorite",
+                    rating
+                `,
+                [
+                    rating,
                     id,
                     userId,
                 ],

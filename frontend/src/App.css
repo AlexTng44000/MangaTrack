@@ -171,3 +171,29 @@ h2 {
   color: inherit;
   font: inherit;
 }
+
+.rating-control {
+  margin-top: 16px;
+}
+
+.rating-control label {
+  display: block;
+  margin-bottom: 8px;
+}
+
+.rating-control input[type='range'] {
+  width: 100%;
+  cursor: pointer;
+}
+
+.rating-scale {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.85rem;
+  opacity: 0.7;
+  margin-bottom: 8px;
+}
+
+.rating-control button {
+  margin-top: 6px;
+}

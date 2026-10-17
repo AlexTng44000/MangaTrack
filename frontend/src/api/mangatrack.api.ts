@@ -326,3 +326,31 @@ export async function getCatalogByIds(
 
     return response.json();
 }
+
+export async function updateLibraryRating(
+    id: number,
+    rating: number | null,
+): Promise<LibraryEntry> {
+    const response =
+        await authenticatedFetch(
+            `${API_URL}/library/${id}/rating`,
+            {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type':
+                        'application/json',
+                },
+                body: JSON.stringify({
+                    rating,
+                }),
+            },
+        );
+
+    if (!response.ok) {
+        throw new Error(
+            'Impossible de modifier la note',
+        );
+    }
+
+    return response.json();
+}

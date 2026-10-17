@@ -112,4 +112,25 @@ export class LibraryService {
 
         return entry;
     }
+
+    async updateRating(
+        id: number,
+        userId: number,
+        rating: number | null,
+    ): Promise<LibraryEntry> {
+        const entry =
+            await this.repository.updateRating(
+                id,
+                userId,
+                rating,
+            );
+
+        if (!entry) {
+            throw new Error(
+                'LIBRARY_ENTRY_NOT_FOUND',
+            );
+        }
+
+        return entry;
+    }
 }

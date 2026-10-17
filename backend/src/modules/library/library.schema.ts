@@ -30,3 +30,13 @@ export const updateFavoriteSchema =
         isFavorite:
             z.boolean(),
     });
+
+export const updateRatingSchema =
+    z.object({
+        rating:
+            z.number()
+                .int()
+                .min(0)
+                .max(10)
+                .nullable(),
+    });

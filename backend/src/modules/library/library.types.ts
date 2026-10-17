@@ -11,7 +11,9 @@ export interface LibraryEntry {
     status: LibraryStatus;
     progress: number;
     isFavorite: boolean;
+    rating: number | null;
 }
+
 export interface CreateLibraryEntryInput {
     catalogItemId: number;
     status: LibraryStatus;

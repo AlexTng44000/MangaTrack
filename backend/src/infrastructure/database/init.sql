@@ -14,6 +14,10 @@ CREATE TABLE IF NOT EXISTS library_entries (
     ON DELETE CASCADE,
     catalog_item_id INTEGER NOT NULL,
     is_favorite BOOLEAN NOT NULL DEFAULT FALSE
+    rating INTEGER CHECK (
+    rating >= 0
+    AND rating <= 10
+)
     status VARCHAR(30) NOT NULL
         CHECK (
             status IN (

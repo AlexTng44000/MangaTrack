@@ -11,4 +11,5 @@ export interface LibraryEntry {
     status: LibraryStatus;
     progress: number;
     isFavorite: boolean;
+    rating: number | null;
 }
