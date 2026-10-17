@@ -617,7 +617,7 @@ select option {
 .catalog-search {
   display: grid;
   grid-template-columns:
-    minmax(280px, 1.25fr) minmax(140px, 0.35fr) minmax(160px, 0.4fr) auto;
+    minmax(240px, 1.15fr) minmax(125px, 0.28fr) minmax(145px, 0.34fr) minmax(165px, 0.38fr) auto;
   gap: 12px;
   margin: 0 0 18px;
   padding: 16px;
@@ -3414,7 +3414,8 @@ select option {
 
   .catalog-search {
     grid-template-columns:
-      minmax(220px, 1fr) minmax(145px, 0.3fr) minmax(145px, 0.3fr);
+      minmax(220px, 1fr) repeat(3,
+        minmax(135px, 0.3fr));
   }
 
   .catalog-search button {
@@ -3536,6 +3537,10 @@ select option {
   }
 
   .catalog-search-field {
+    grid-column: 1 / -1;
+  }
+
+  .catalog-sort-field {
     grid-column: 1 / -1;
   }
 

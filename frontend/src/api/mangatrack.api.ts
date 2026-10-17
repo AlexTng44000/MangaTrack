@@ -63,11 +63,20 @@ async function authenticatedFetch(
     return response;
 }
 
+export type CatalogSort =
+    | 'popularity'
+    | 'trending'
+    | 'score'
+    | 'recent'
+    | 'title';
+
 export async function getCatalog(
     search?: string,
     page = 1,
     type?: 'anime' | 'manga',
     genre?: string,
+    sort: CatalogSort =
+        'popularity',
 ): Promise<CatalogPageResult> {
     const params =
         new URLSearchParams();
@@ -103,6 +112,11 @@ export async function getCatalog(
             genre.trim(),
         );
     }
+
+    params.set(
+        'sort',
+        sort,
+    );
 
     const response =
         await fetch(

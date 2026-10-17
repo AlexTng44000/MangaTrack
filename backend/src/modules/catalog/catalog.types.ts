@@ -2,6 +2,13 @@ export type MediaType =
     | 'anime'
     | 'manga';
 
+export type CatalogSort =
+    | 'popularity'
+    | 'trending'
+    | 'score'
+    | 'recent'
+    | 'title';
+
 export interface CatalogItem {
     id: number;
     title: string;
@@ -19,6 +26,7 @@ export interface CatalogPageResult {
 export interface CatalogFilters {
     type?: MediaType;
     genre?: string;
+    sort?: CatalogSort;
 }
 
 export interface CatalogRelation {

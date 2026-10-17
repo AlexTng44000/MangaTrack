@@ -8,8 +8,18 @@ import type {
 
 import type {
     CatalogFilters,
+    CatalogSort,
     MediaType,
 } from './catalog.types.js';
+
+const catalogSorts:
+    CatalogSort[] = [
+        'popularity',
+        'trending',
+        'score',
+        'recent',
+        'title',
+    ];
 
 export function createCatalogRouter(
     catalogService: CatalogService,
@@ -66,6 +76,28 @@ export function createCatalogRouter(
                     ? req.query.genre.trim()
                     : undefined;
 
+            const rawSort =
+                typeof req.query.sort ===
+                    'string'
+                    ? req.query.sort
+                    : 'popularity';
+
+            if (
+                !catalogSorts.includes(
+                    rawSort as CatalogSort,
+                )
+            ) {
+                return res
+                    .status(400)
+                    .json({
+                        error:
+                            'Le tri doit être popularity, trending, score, recent ou title',
+                    });
+            }
+
+            const sort =
+                rawSort as CatalogSort;
+
             const filters:
                 CatalogFilters = {
                 type,
@@ -73,6 +105,8 @@ export function createCatalogRouter(
                 genre:
                     genre ||
                     undefined,
+
+                sort,
             };
 
             if (

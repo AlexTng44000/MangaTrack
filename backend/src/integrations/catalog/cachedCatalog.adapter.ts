@@ -162,6 +162,10 @@ export class CachedCatalogAdapter
                 .toLowerCase() ||
             'all';
 
+        const sort =
+            filters.sort ||
+            'popularity';
+
         return [
             'catalog',
             'anilist',
@@ -176,6 +180,8 @@ export class CachedCatalogAdapter
             `genre:${encodeURIComponent(
                 genre,
             )}`,
+
+            `sort:${sort}`,
         ].join(':');
     }
 

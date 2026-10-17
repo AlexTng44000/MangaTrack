@@ -19,6 +19,10 @@ import {
 } from '../api/mangatrack.api';
 
 import type {
+    CatalogSort,
+} from '../api/mangatrack.api';
+
+import type {
     CatalogItem,
 } from '../types/catalog';
 
@@ -35,6 +39,28 @@ function getTotalLabel(
     return item.type === 'anime'
         ? `${item.total} épisode${item.total > 1 ? 's' : ''}`
         : `${item.total} chapitre${item.total > 1 ? 's' : ''}`;
+}
+
+function getSortLabel(
+    sort: CatalogSort,
+): string {
+    switch (sort) {
+        case 'trending':
+            return 'Tendances';
+
+        case 'score':
+            return 'Meilleures notes';
+
+        case 'recent':
+            return 'Plus récents';
+
+        case 'title':
+            return 'Titre A-Z';
+
+        case 'popularity':
+        default:
+            return 'Popularité';
+    }
 }
 
 export function CatalogPage() {
@@ -137,6 +163,22 @@ export function CatalogPage() {
         setActiveGenre,
     ] =
         useState('');
+
+    const [
+        sortFilter,
+        setSortFilter,
+    ] =
+        useState<CatalogSort>(
+            'popularity',
+        );
+
+    const [
+        activeSort,
+        setActiveSort,
+    ] =
+        useState<CatalogSort>(
+            'popularity',
+        );
 
     const navigate =
         useNavigate();
@@ -288,6 +330,7 @@ export function CatalogPage() {
                     undefined,
                     genreFilter ||
                     undefined,
+                    sortFilter,
                 );
 
             setItems(
@@ -312,6 +355,10 @@ export function CatalogPage() {
 
             setActiveGenre(
                 genreFilter,
+            );
+
+            setActiveSort(
+                sortFilter,
             );
         } catch {
             setError(
@@ -351,6 +398,14 @@ export function CatalogPage() {
 
         setActiveGenre(
             '',
+        );
+
+        setSortFilter(
+            'popularity',
+        );
+
+        setActiveSort(
+            'popularity',
         );
 
         try {
@@ -400,6 +455,7 @@ export function CatalogPage() {
                     undefined,
                     activeGenre ||
                     undefined,
+                    activeSort,
                 );
 
             setItems(
@@ -431,7 +487,9 @@ export function CatalogPage() {
         Boolean(
             activeSearch ||
             activeType ||
-            activeGenre,
+            activeGenre ||
+            activeSort !==
+            'popularity',
         );
 
     if (loading) {
@@ -471,8 +529,8 @@ export function CatalogPage() {
                     <p>
                         Recherche un anime ou un manga,
                         filtre par type ou par genre,
-                        puis ajoute tes découvertes à ta
-                        bibliothèque.
+                        choisis ton tri, puis ajoute tes
+                        découvertes à ta bibliothèque.
                     </p>
                 </div>
 
@@ -630,6 +688,49 @@ export function CatalogPage() {
                     </select>
                 </label>
 
+
+                <label className="catalog-sort-field">
+                    <span>
+                        Trier par
+                    </span>
+
+                    <select
+                        value={
+                            sortFilter
+                        }
+                        onChange={(
+                            event,
+                        ) =>
+                            setSortFilter(
+                                event
+                                    .target
+                                    .value as
+                                CatalogSort,
+                            )
+                        }
+                    >
+                        <option value="popularity">
+                            Popularité
+                        </option>
+
+                        <option value="trending">
+                            Tendances du moment
+                        </option>
+
+                        <option value="score">
+                            Meilleures notes
+                        </option>
+
+                        <option value="recent">
+                            Plus récents
+                        </option>
+
+                        <option value="title">
+                            Titre A-Z
+                        </option>
+                    </select>
+                </label>
+
                 <div className="catalog-search-actions">
                     <button
                         type="submit"
@@ -649,7 +750,11 @@ export function CatalogPage() {
                         typeFilter ||
                         activeType ||
                         genreFilter ||
-                        activeGenre
+                        activeGenre ||
+                        sortFilter !==
+                        'popularity' ||
+                        activeSort !==
+                        'popularity'
                     ) && (
                             <button
                                 type="button"
@@ -696,6 +801,18 @@ export function CatalogPage() {
                             }
                         </strong>
                     )}
+
+                    {activeSort !==
+                        'popularity' && (
+                            <strong>
+                                Tri :{' '}
+                                {
+                                    getSortLabel(
+                                        activeSort,
+                                    )
+                                }
+                            </strong>
+                        )}
                 </div>
             )}
 

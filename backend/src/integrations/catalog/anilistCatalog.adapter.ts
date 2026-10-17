@@ -6,6 +6,7 @@ import type {
     CatalogItem,
     CatalogPageResult,
     CatalogPort,
+    CatalogSort,
     CatalogRelation,
     CatalogStreamingEpisode,
 } from '../../modules/catalog/catalog.types.js';
@@ -23,6 +24,16 @@ interface AniListMedia {
 
     episodes: number | null;
     chapters: number | null;
+
+    popularity?: number | null;
+    trending?: number | null;
+    averageScore?: number | null;
+
+    startDate?: {
+        year: number | null;
+        month: number | null;
+        day: number | null;
+    };
 }
 
 interface AniListPage {
@@ -89,6 +100,145 @@ interface AniListAiringResponse {
     }>;
 }
 
+function getAniListSort(
+    sort: CatalogSort | undefined,
+): string {
+    switch (sort) {
+        case 'trending':
+            return 'TRENDING_DESC';
+
+        case 'score':
+            return 'SCORE_DESC';
+
+        case 'recent':
+            return 'START_DATE_DESC';
+
+        case 'title':
+            return 'TITLE_ROMAJI';
+
+        case 'popularity':
+        default:
+            return 'POPULARITY_DESC';
+    }
+}
+
+function getStartDateValue(
+    item: AniListMedia,
+): number {
+    const year =
+        item.startDate?.year ?? 0;
+
+    const month =
+        item.startDate?.month ?? 0;
+
+    const day =
+        item.startDate?.day ?? 0;
+
+    return (
+        year * 10000 +
+        month * 100 +
+        day
+    );
+}
+
+function sortMedia(
+    media: AniListMedia[],
+    sort: CatalogSort | undefined,
+): AniListMedia[] {
+    const selectedSort =
+        sort ?? 'popularity';
+
+    return [
+        ...media,
+    ].sort(
+        (first, second) => {
+            if (
+                selectedSort ===
+                'title'
+            ) {
+                const firstTitle =
+                    first.title
+                        .english ??
+                    first.title
+                        .romaji;
+
+                const secondTitle =
+                    second.title
+                        .english ??
+                    second.title
+                        .romaji;
+
+                return firstTitle
+                    .localeCompare(
+                        secondTitle,
+                        'fr',
+                        {
+                            sensitivity:
+                                'base',
+                        },
+                    );
+            }
+
+            if (
+                selectedSort ===
+                'trending'
+            ) {
+                return (
+                    (
+                        second.trending ??
+                        -1
+                    ) -
+                    (
+                        first.trending ??
+                        -1
+                    )
+                );
+            }
+
+            if (
+                selectedSort ===
+                'score'
+            ) {
+                return (
+                    (
+                        second.averageScore ??
+                        -1
+                    ) -
+                    (
+                        first.averageScore ??
+                        -1
+                    )
+                );
+            }
+
+            if (
+                selectedSort ===
+                'recent'
+            ) {
+                return (
+                    getStartDateValue(
+                        second,
+                    ) -
+                    getStartDateValue(
+                        first,
+                    )
+                );
+            }
+
+            return (
+                (
+                    second.popularity ??
+                    -1
+                ) -
+                (
+                    first.popularity ??
+                    -1
+                )
+            );
+        },
+    );
+}
+
 export class AniListCatalogAdapter
     implements CatalogPort {
 
@@ -133,6 +283,7 @@ export class AniListCatalogAdapter
                 $perPage: Int!
                 $search: String
                 $genre: String
+                $sort: [MediaSort]
             ) {
                 anime: Page(
                     page: $page
@@ -147,7 +298,7 @@ export class AniListCatalogAdapter
                         isAdult: false
                         search: $search
                         genre: $genre
-                        sort: [POPULARITY_DESC]
+                        sort: $sort
                     ) {
                         id
 
@@ -158,6 +309,16 @@ export class AniListCatalogAdapter
 
                         type
                         genres
+
+                        popularity
+                        trending
+                        averageScore
+
+                        startDate {
+                            year
+                            month
+                            day
+                        }
                     }
                 }
 
@@ -174,7 +335,7 @@ export class AniListCatalogAdapter
                         isAdult: false
                         search: $search
                         genre: $genre
-                        sort: [POPULARITY_DESC]
+                        sort: $sort
                     ) {
                         id
 
@@ -185,6 +346,16 @@ export class AniListCatalogAdapter
 
                         type
                         genres
+
+                        popularity
+                        trending
+                        averageScore
+
+                        startDate {
+                            year
+                            month
+                            day
+                        }
                     }
                 }
             }
@@ -217,6 +388,12 @@ export class AniListCatalogAdapter
                             genre:
                                 filters.genre ||
                                 null,
+
+                            sort: [
+                                getAniListSort(
+                                    filters.sort,
+                                ),
+                            ],
                         },
                     }),
                 },
@@ -275,6 +452,12 @@ export class AniListCatalogAdapter
                     .media,
             ];
         }
+
+        media =
+            sortMedia(
+                media,
+                filters.sort,
+            );
 
         const items =
             media.map(
