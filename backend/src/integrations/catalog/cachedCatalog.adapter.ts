@@ -1,22 +1,20 @@
 import type {
+    CatalogFilters,
     CatalogPageResult,
     CatalogPort,
-    CatalogFilters
 } from '../../modules/catalog/catalog.types.js';
 
 import type {
     Redis,
 } from 'ioredis';
 
-
 export class CachedCatalogAdapter
-
     implements CatalogPort {
-    private readonly freshKey =
-        'catalog:anilist:fresh';
+    private readonly freshTtl =
+        15 * 60;
 
-    private readonly staleKey =
-        'catalog:anilist:stale';
+    private readonly staleTtl =
+        24 * 60 * 60;
 
     constructor(
         private readonly source:
@@ -30,22 +28,46 @@ export class CachedCatalogAdapter
         page = 1,
         filters: CatalogFilters = {},
     ): Promise<CatalogPageResult> {
-        // Pour le moment les pages suivantes
-        // vont directement vers AniList.
-        if (
-            page !== 1 ||
-            filters.type ||
-            filters.genre
-        ) {
-            return this.source.getAll(
+        return this.getWithCache(
+            undefined,
+            page,
+            filters,
+        );
+    }
+
+    async search(
+        query: string,
+        page = 1,
+        filters: CatalogFilters = {},
+    ): Promise<CatalogPageResult> {
+        return this.getWithCache(
+            query,
+            page,
+            filters,
+        );
+    }
+
+    private async getWithCache(
+        search: string | undefined,
+        page: number,
+        filters: CatalogFilters,
+    ): Promise<CatalogPageResult> {
+        const baseKey =
+            this.buildKey(
+                search,
                 page,
                 filters,
             );
-        }
+
+        const freshKey =
+            `${baseKey}:fresh`;
+
+        const staleKey =
+            `${baseKey}:stale`;
 
         const fresh =
             await this.redis.get(
-                this.freshKey,
+                freshKey,
             );
 
         if (fresh) {
@@ -56,37 +78,46 @@ export class CachedCatalogAdapter
 
         try {
             const result =
-                await this.source.getAll(
-                    1,
-                );
+                search
+                    ? await this.source.search(
+                        search,
+                        page,
+                        filters,
+                    )
+                    : await this.source.getAll(
+                        page,
+                        filters,
+                    );
 
             const serialized =
                 JSON.stringify(result);
 
-            await this.redis.set(
-                this.freshKey,
-                serialized,
-                'EX',
-                15 * 60,
-            );
+            await Promise.all([
+                this.redis.set(
+                    freshKey,
+                    serialized,
+                    'EX',
+                    this.freshTtl,
+                ),
 
-            await this.redis.set(
-                this.staleKey,
-                serialized,
-                'EX',
-                24 * 60 * 60,
-            );
+                this.redis.set(
+                    staleKey,
+                    serialized,
+                    'EX',
+                    this.staleTtl,
+                ),
+            ]);
 
             return result;
         } catch (error) {
             const stale =
                 await this.redis.get(
-                    this.staleKey,
+                    staleKey,
                 );
 
             if (stale) {
                 console.warn(
-                    'AniList indisponible : utilisation du cache de secours',
+                    `AniList indisponible : cache de secours utilisé pour ${baseKey}`,
                 );
 
                 return JSON.parse(
@@ -98,15 +129,38 @@ export class CachedCatalogAdapter
         }
     }
 
-    async search(
-        query: string,
-        page = 1,
-        filters: CatalogFilters = {},
-    ): Promise<CatalogPageResult> {
-        return this.source.search(
-            query,
-            page,
-            filters,
-        );
+    private buildKey(
+        search: string | undefined,
+        page: number,
+        filters: CatalogFilters,
+    ): string {
+        const normalizedSearch =
+            search
+                ?.trim()
+                .toLowerCase() ||
+            'all';
+
+        const type =
+            filters.type ||
+            'all';
+
+        const genre =
+            filters.genre
+                ?.trim()
+                .toLowerCase() ||
+            'all';
+
+        return [
+            'catalog',
+            'anilist',
+            `page:${page}`,
+            `search:${encodeURIComponent(
+                normalizedSearch,
+            )}`,
+            `type:${type}`,
+            `genre:${encodeURIComponent(
+                genre,
+            )}`,
+        ].join(':');
     }
 }
