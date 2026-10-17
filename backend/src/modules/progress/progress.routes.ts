@@ -9,13 +9,19 @@ import {
     updateProgressSchema,
 } from './progress.schema.js';
 
+import type {
+    RequestHandler,
+} from 'express';
+
 export function createProgressRouter(
     progressService: ProgressService,
+    requireAuth: RequestHandler,
 ): Router {
     const router = Router();
 
     router.patch(
         '/:libraryEntryId',
+        requireAuth,
         async (req, res) => {
             const paramsValidation =
                 progressParamsSchema.safeParse(
@@ -53,6 +59,7 @@ export function createProgressRouter(
 
             const entry =
                 await progressService.updateProgress(
+                    req.auth!.userId,
                     libraryEntryId,
                     progress,
                 );

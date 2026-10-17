@@ -1,39 +1,53 @@
 import type {
-    CreateLibraryEntryInput,
-    LibraryEntry,
-} from './library.types.js';
-
-import type {
     LibraryRepository,
 } from './library.repository.js';
 
+import type {
+    CreateLibraryEntryInput,
+} from './library.types.js';
+
 export class LibraryService {
     constructor(
-        private readonly repository: LibraryRepository,
+        private readonly repository:
+            LibraryRepository,
     ) { }
 
-    async getAll(): Promise<LibraryEntry[]> {
-        return this.repository.getAll();
+    async getAll(
+        userId: number,
+    ) {
+        return this.repository.getAll(
+            userId,
+        );
     }
 
     async getById(
         id: number,
-    ): Promise<LibraryEntry | undefined> {
-        return this.repository.getById(id);
+        userId: number,
+    ) {
+        return this.repository.getById(
+            id,
+            userId,
+        );
     }
 
     async add(
+        userId: number,
         input: CreateLibraryEntryInput,
-    ): Promise<LibraryEntry> {
-        return this.repository.add(input);
+    ) {
+        return this.repository.add(
+            userId,
+            input,
+        );
     }
 
     async updateProgress(
         id: number,
+        userId: number,
         progress: number,
-    ): Promise<LibraryEntry | undefined> {
+    ) {
         return this.repository.updateProgress(
             id,
+            userId,
             progress,
         );
     }

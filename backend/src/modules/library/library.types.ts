@@ -13,7 +13,6 @@ export interface LibraryEntry {
 }
 
 export interface CreateLibraryEntryInput {
-    userId: number;
     catalogItemId: number;
     status: LibraryStatus;
 }

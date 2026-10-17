@@ -4,18 +4,23 @@ import type {
 } from './library.types.js';
 
 export interface LibraryRepository {
-    getAll(): Promise<LibraryEntry[]>;
+    getAll(
+        userId: number,
+    ): Promise<LibraryEntry[]>;
 
     getById(
         id: number,
+        userId: number,
     ): Promise<LibraryEntry | undefined>;
 
     add(
+        userId: number,
         input: CreateLibraryEntryInput,
     ): Promise<LibraryEntry>;
 
     updateProgress(
         id: number,
+        userId: number,
         progress: number,
     ): Promise<LibraryEntry | undefined>;
 }

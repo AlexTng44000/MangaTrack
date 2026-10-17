@@ -36,6 +36,30 @@ import {
     BullMqNotificationQueueAdapter,
 } from './infrastructure/queue/bullMqNotificationQueue.adapter.js';
 
+import {
+    PostgresUserRepository,
+} from './infrastructure/database/postgresUser.repository.js';
+
+import {
+    BcryptAdapter,
+} from './integrations/security/bcrypt.adapter.js';
+
+import {
+    JwtAdapter,
+} from './integrations/security/jwt.adapter.js';
+
+import {
+    AuthService,
+} from './modules/users/auth.service.js';
+
+import {
+    createAuthRouter,
+} from './modules/users/auth.routes.js';
+
+import {
+    createRequireAuth,
+} from './modules/users/auth.middleware.js';
+
 const app = express();
 const PORT = 3000;
 
@@ -64,6 +88,26 @@ const catalogAdapter =
 
 const catalogService =
     new CatalogService(catalogAdapter);
+
+const userRepository =
+    new PostgresUserRepository(db);
+
+const passwordHasher =
+    new BcryptAdapter();
+
+const tokenService =
+    new JwtAdapter();
+
+const requireAuth =
+    createRequireAuth(tokenService);
+
+const authService =
+    new AuthService(
+        userRepository,
+        passwordHasher,
+        tokenService,
+    );
+
 app.get('/health', (_req, res) => {
     res.json({
         status: 'ok',
@@ -78,17 +122,31 @@ app.use(
 
 app.use(
     '/library',
-    createLibraryRouter(libraryService),
+    createLibraryRouter(
+        libraryService,
+        requireAuth,
+    ),
 );
 
 app.use(
     '/progress',
-    createProgressRouter(progressService),
+    createProgressRouter(
+        progressService,
+        requireAuth,
+    ),
 );
 
 app.use(
     '/notifications',
     createNotificationRouter(notificationService),
+);
+
+app.use(
+    '/auth',
+    createAuthRouter(
+        authService,
+        requireAuth,
+    ),
 );
 
 app.listen(PORT, () => {

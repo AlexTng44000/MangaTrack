@@ -2,11 +2,6 @@ import { z } from 'zod';
 
 export const createLibraryEntrySchema =
     z.object({
-        userId: z
-            .number()
-            .int()
-            .positive(),
-
         catalogItemId: z
             .number()
             .int()
