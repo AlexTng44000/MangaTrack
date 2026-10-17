@@ -84,7 +84,9 @@ export class PostgresUserRepository
 
         return result.rows[0];
     }
-    async getAll(): Promise<User[]> {
+
+    async getAll():
+        Promise<User[]> {
         const result =
             await this.db.query<User>(
                 `
@@ -99,5 +101,24 @@ export class PostgresUserRepository
             );
 
         return result.rows;
+    }
+
+    async deleteById(
+        id: number,
+    ): Promise<boolean> {
+        const result =
+            await this.db.query(
+                `
+                DELETE FROM users
+                WHERE id = $1
+                RETURNING id
+                `,
+                [id],
+            );
+
+        return (
+            result.rowCount ??
+            0
+        ) > 0;
     }
 }

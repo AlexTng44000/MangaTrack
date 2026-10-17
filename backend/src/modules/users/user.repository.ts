@@ -17,4 +17,8 @@ export interface UserRepository {
     create(
         input: CreateUserInput,
     ): Promise<User>;
+
+    deleteById(
+        id: number,
+    ): Promise<boolean>;
 }

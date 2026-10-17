@@ -1,6 +1,7 @@
 import {
     useEffect,
     useState,
+    type FormEvent,
 } from 'react';
 
 import {
@@ -51,35 +52,63 @@ function formatDate(
 }
 
 export function RemindersPage() {
-
-    const [message, setMessage] =
+    const [
+        message,
+        setMessage,
+    ] =
         useState('');
 
-    const [scheduledAt, setScheduledAt] =
+    const [
+        scheduledAt,
+        setScheduledAt,
+    ] =
         useState('');
 
-    const [reminders, setReminders] =
+    const [
+        reminders,
+        setReminders,
+    ] =
         useState<Reminder[]>([]);
 
-    const [success, setSuccess] =
-        useState<string | null>(null);
+    const [
+        success,
+        setSuccess,
+    ] =
+        useState<string | null>(
+            null,
+        );
 
-    const [error, setError] =
-        useState<string | null>(null);
+    const [
+        error,
+        setError,
+    ] =
+        useState<string | null>(
+            null,
+        );
 
-    const [sending, setSending] =
+    const [
+        sending,
+        setSending,
+    ] =
         useState(false);
 
-    const [loading, setLoading] =
+    const [
+        loading,
+        setLoading,
+    ] =
         useState(true);
 
-    const [cancellingId, setCancellingId] =
+    const [
+        cancellingId,
+        setCancellingId,
+    ] =
         useState<number | null>(
             null,
         );
 
     useEffect(() => {
-        let cancelled = false;
+        let cancelled =
+            false;
 
         getReminders()
             .then((data) => {
@@ -100,24 +129,35 @@ export function RemindersPage() {
             })
             .finally(() => {
                 if (!cancelled) {
-                    setLoading(false);
+                    setLoading(
+                        false,
+                    );
                 }
             });
 
         return () => {
-            cancelled = true;
+            cancelled =
+                true;
         };
     }, []);
 
     async function handleSubmit(
         event:
-            React.FormEvent<HTMLFormElement>,
+            FormEvent<HTMLFormElement>,
     ) {
         event.preventDefault();
 
-        setError(null);
-        setSuccess(null);
-        setSending(true);
+        setError(
+            null,
+        );
+
+        setSuccess(
+            null,
+        );
+
+        setSending(
+            true,
+        );
 
         try {
             const scheduledDate =
@@ -143,8 +183,13 @@ export function RemindersPage() {
                 'Rappel programmé avec succès.',
             );
 
-            setMessage('');
-            setScheduledAt('');
+            setMessage(
+                '',
+            );
+
+            setScheduledAt(
+                '',
+            );
         } catch (err) {
             setError(
                 err instanceof Error
@@ -152,16 +197,26 @@ export function RemindersPage() {
                     : 'Erreur inconnue',
             );
         } finally {
-            setSending(false);
+            setSending(
+                false,
+            );
         }
     }
 
     async function handleCancel(
         id: number,
     ) {
-        setError(null);
-        setSuccess(null);
-        setCancellingId(id);
+        setError(
+            null,
+        );
+
+        setSuccess(
+            null,
+        );
+
+        setCancellingId(
+            id,
+        );
 
         try {
             const updated =
@@ -196,71 +251,160 @@ export function RemindersPage() {
         }
     }
 
+    const pendingCount =
+        reminders.filter(
+            (reminder) =>
+                reminder.status ===
+                'pending',
+        ).length;
+
+    const sentCount =
+        reminders.filter(
+            (reminder) =>
+                reminder.status ===
+                'sent',
+        ).length;
+
     return (
-        <main>
-            <h2>
-                Programmer un rappel
-            </h2>
+        <main className="reminders-page">
+            <section className="reminders-heading">
+                <div>
+                    <span className="page-eyebrow">
+                        Notifications
+                    </span>
 
-            <form
-                className="reminder-form"
-                onSubmit={
-                    handleSubmit
-                }
-            >
-                <label>
-                    Message
+                    <h2>
+                        Mes rappels
+                    </h2>
 
-                    <textarea
-                        value={
-                            message
-                        }
-                        onChange={(
-                            event,
-                        ) =>
-                            setMessage(
-                                event
-                                    .target
-                                    .value,
-                            )
-                        }
-                        placeholder="Ex : Le prochain épisode de Frieren sort bientôt."
-                        required
-                    />
-                </label>
+                    <p>
+                        Programme une alerte pour ne
+                        pas manquer une sortie ou
+                        reprendre une œuvre plus tard.
+                    </p>
+                </div>
 
-                <label>
-                    Date et heure
+                <div className="reminders-summary">
+                    <article>
+                        <strong>
+                            {
+                                reminders.length
+                            }
+                        </strong>
 
-                    <input
-                        type="datetime-local"
-                        value={
-                            scheduledAt
-                        }
-                        onChange={(
-                            event,
-                        ) =>
-                            setScheduledAt(
-                                event
-                                    .target
-                                    .value,
-                            )
-                        }
-                        required
-                    />
-                </label>
+                        <span>
+                            total
+                        </span>
+                    </article>
 
-                <button
-                    type="submit"
-                    disabled={
-                        sending
+                    <article>
+                        <strong>
+                            {
+                                pendingCount
+                            }
+                        </strong>
+
+                        <span>
+                            en attente
+                        </span>
+                    </article>
+
+                    <article>
+                        <strong>
+                            {
+                                sentCount
+                            }
+                        </strong>
+
+                        <span>
+                            envoyés
+                        </span>
+                    </article>
+                </div>
+            </section>
+
+            <section className="reminder-create-card">
+                <div className="reminder-create-copy">
+                    <span className="page-eyebrow">
+                        Nouveau rappel
+                    </span>
+
+                    <h3>
+                        Programmer une notification
+                    </h3>
+
+                    <p>
+                        Choisis ton message et la date
+                        à laquelle MangaTrack doit
+                        déclencher le rappel.
+                    </p>
+                </div>
+
+                <form
+                    className="reminder-form"
+                    onSubmit={
+                        handleSubmit
                     }
                 >
-                    {sending
-                        ? 'Programmation...'
-                        : 'Programmer le rappel'}
-                </button>
-            </form>
+                    <label className="reminder-message-field">
+                        <span>
+                            Message
+                        </span>
+
+                        <textarea
+                            value={
+                                message
+                            }
+                            onChange={(
+                                event,
+                            ) =>
+                                setMessage(
+                                    event
+                                        .target
+                                        .value,
+                                )
+                            }
+                            placeholder="Ex : Le prochain épisode de Frieren sort bientôt."
+                            required
+                        />
+                    </label>
+
+                    <label>
+                        <span>
+                            Date et heure
+                        </span>
+
+                        <input
+                            type="datetime-local"
+                            value={
+                                scheduledAt
+                            }
+                            onChange={(
+                                event,
+                            ) =>
+                                setScheduledAt(
+                                    event
+                                        .target
+                                        .value,
+                                )
+                            }
+                            required
+                        />
+                    </label>
+
+                    <button
+                        type="submit"
+                        className="reminder-submit-button"
+                        disabled={
+                            sending
+                        }
+                    >
+                        {sending
+                            ? 'Programmation...'
+                            : 'Programmer le rappel'}
+                    </button>
+                </form>
+            </section>
 
             {success && (
                 <p className="success-message">
@@ -275,86 +419,122 @@ export function RemindersPage() {
             )}
 
             <section className="reminders-section">
-                <h2>
-                    Mes rappels
-                </h2>
+                <div className="section-heading">
+                    <span className="page-eyebrow">
+                        Historique
+                    </span>
+
+                    <h3>
+                        Tous mes rappels
+                    </h3>
+
+                    <p>
+                        Retrouve ici les rappels en
+                        attente, envoyés ou annulés.
+                    </p>
+                </div>
 
                 {loading && (
-                    <p>
-                        Chargement...
-                    </p>
+                    <div className="reminders-empty">
+                        Chargement des rappels...
+                    </div>
                 )}
 
                 {!loading &&
                     reminders.length ===
                     0 && (
-                        <p>
-                            Aucun rappel
-                            pour le
-                            moment.
-                        </p>
+                        <div className="reminders-empty">
+                            <strong>
+                                Aucun rappel
+                            </strong>
+
+                            <p>
+                                Programme ton premier
+                                rappel avec le formulaire
+                                ci-dessus ou depuis le
+                                calendrier.
+                            </p>
+                        </div>
                     )}
 
-                <div className="reminders-list">
-                    {reminders.map(
-                        (
-                            reminder,
-                        ) => (
-                            <article
-                                key={
-                                    reminder.id
-                                }
-                                className="reminder-card"
-                            >
-                                <div>
-                                    <h3>
-                                        {
-                                            reminder.message
+                {!loading &&
+                    reminders.length >
+                    0 && (
+                        <div className="reminders-list">
+                            {reminders.map(
+                                (
+                                    reminder,
+                                ) => (
+                                    <article
+                                        key={
+                                            reminder.id
                                         }
-                                    </h3>
+                                        className="reminder-card"
+                                    >
+                                        <div className="reminder-card-main">
+                                            <div className="reminder-card-heading">
+                                                <span
+                                                    className={`reminder-status reminder-status-${reminder.status}`}
+                                                >
+                                                    {getStatusLabel(
+                                                        reminder.status,
+                                                    )}
+                                                </span>
 
-                                    <p>
-                                        Prévu le :{' '}
-                                        {formatDate(
-                                            reminder.scheduledAt,
-                                        )}
-                                    </p>
+                                                <span className="reminder-id">
+                                                    #
+                                                    {
+                                                        reminder.id
+                                                    }
+                                                </span>
+                                            </div>
 
-                                    <p>
-                                        Statut :{' '}
-                                        <strong>
-                                            {getStatusLabel(
-                                                reminder.status,
+                                            <h4>
+                                                {
+                                                    reminder.message
+                                                }
+                                            </h4>
+
+                                            <div className="reminder-date">
+                                                <span>
+                                                    Prévu le
+                                                </span>
+
+                                                <strong>
+                                                    {formatDate(
+                                                        reminder.scheduledAt,
+                                                    )}
+                                                </strong>
+                                            </div>
+                                        </div>
+
+                                        {reminder.status ===
+                                            'pending' &&
+                                            reminder.jobId && (
+                                                <button
+                                                    type="button"
+                                                    className="reminder-cancel-button"
+                                                    onClick={() =>
+                                                        handleCancel(
+                                                            reminder.id,
+                                                        )
+                                                    }
+                                                    disabled={
+                                                        cancellingId ===
+                                                        reminder.id
+                                                    }
+                                                >
+                                                    {cancellingId ===
+                                                        reminder.id
+                                                        ? 'Annulation...'
+                                                        : 'Annuler'}
+                                                </button>
                                             )}
-                                        </strong>
-                                    </p>
-                                </div>
-
-                                {reminder.status ===
-                                    'pending' &&
-                                    reminder.jobId && (
-                                        <button
-                                            type="button"
-                                            onClick={() =>
-                                                handleCancel(
-                                                    reminder.id,
-                                                )
-                                            }
-                                            disabled={
-                                                cancellingId ===
-                                                reminder.id
-                                            }
-                                        >
-                                            {cancellingId ===
-                                                reminder.id
-                                                ? 'Annulation...'
-                                                : 'Annuler'}
-                                        </button>
-                                    )}
-                            </article>
-                        ),
+                                    </article>
+                                ),
+                            )}
+                        </div>
                     )}
-                </div>
             </section>
         </main>
     );

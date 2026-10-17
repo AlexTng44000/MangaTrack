@@ -4,6 +4,7 @@ import {
 
 import {
   Navigate,
+  NavLink,
   Route,
   Routes,
   useNavigate,
@@ -83,98 +84,170 @@ function App() {
     );
   }
 
+  function getNavLinkClass({
+    isActive,
+  }: {
+    isActive: boolean;
+  }) {
+    return isActive
+      ? 'app-nav-link app-nav-link-active'
+      : 'app-nav-link';
+  }
+
+  function handleLogout() {
+    logout();
+
+    setUser(
+      null,
+    );
+
+    navigate(
+      '/catalog',
+      {
+        replace: true,
+      },
+    );
+  }
+
   return (
     <>
       <header className="app-header">
-        <div>
-          <h1>MangaTrack</h1>
+        <button
+          type="button"
+          className="app-brand"
+          onClick={() =>
+            navigate(
+              '/catalog',
+            )
+          }
+        >
+          <span className="app-brand-mark">
+            M
+          </span>
 
-          <p>
-            Suis tes mangas et anime
-            préférés.
-          </p>
-        </div>
+          <span className="app-brand-copy">
+            <strong>
+              MangaTrack
+            </strong>
 
-        <nav>
-          <button
-            onClick={() =>
-              navigate('/catalog')
+            <small>
+              Anime & Manga Tracker
+            </small>
+          </span>
+        </button>
+
+        <nav
+          className="app-nav"
+          aria-label="Navigation principale"
+        >
+          <NavLink
+            to="/catalog"
+            className={
+              getNavLinkClass
             }
           >
             Catalogue
-          </button>
+          </NavLink>
 
-          <button
-            onClick={() =>
-              navigate('/library')
+          <NavLink
+            to="/library"
+            className={
+              getNavLinkClass
             }
           >
-            Ma bibliothèque
-          </button>
+            Bibliothèque
+          </NavLink>
 
-          <button
-            onClick={() =>
-              navigate('/calendar')
+          <NavLink
+            to="/calendar"
+            className={
+              getNavLinkClass
             }
           >
             Calendrier
-          </button>
+          </NavLink>
 
-          <button
-            onClick={() =>
-              navigate('/stats')
+          <NavLink
+            to="/stats"
+            className={
+              getNavLinkClass
             }
           >
             Statistiques
-          </button>
+          </NavLink>
 
-          <button
-            onClick={() =>
-              navigate('/recommendations')
+          <NavLink
+            to="/recommendations"
+            className={
+              getNavLinkClass
             }
           >
             Recommandations
-          </button>
+          </NavLink>
 
-          <button
-            onClick={() =>
-              navigate('/catch-up')
+          <NavLink
+            to="/catch-up"
+            className={
+              getNavLinkClass
             }
           >
             Rattrapage
-          </button>
+          </NavLink>
 
-          <button
-            onClick={() =>
-              navigate('/reminders')
+          <NavLink
+            to="/reminders"
+            className={
+              getNavLinkClass
             }
           >
             Rappels
-          </button>
+          </NavLink>
 
-          {user.role === 'admin' && (
-            <button
-              onClick={() =>
-                navigate('/admin')
-              }
-            >
-              Administration
-            </button>
-          )}
+          {user.role ===
+            'admin' && (
+              <NavLink
+                to="/admin"
+                className={
+                  getNavLinkClass
+                }
+              >
+                Administration
+              </NavLink>
+            )}
+        </nav>
+
+        <div className="app-header-actions">
+          <div className="user-chip">
+            <span className="user-avatar">
+              {user.email
+                .charAt(0)
+                .toUpperCase()}
+            </span>
+
+            <div className="user-chip-copy">
+              <span>
+                {user.email}
+              </span>
+
+              <small>
+                {user.role ===
+                  'admin'
+                  ? 'Administrateur'
+                  : 'Utilisateur'}
+              </small>
+            </div>
+          </div>
 
           <button
-            onClick={() => {
-              logout();
-              setUser(null);
-
-              navigate(
-                '/catalog',
-              );
-            }}
+            type="button"
+            className="logout-button"
+            onClick={
+              handleLogout
+            }
           >
             Déconnexion
           </button>
-        </nav>
+        </div>
       </header>
 
       <Routes>
@@ -234,14 +307,15 @@ function App() {
           }
         />
 
-        {user.role === 'admin' && (
-          <Route
-            path="/admin"
-            element={
-              <AdminPage />
-            }
-          />
-        )}
+        {user.role ===
+          'admin' && (
+            <Route
+              path="/admin"
+              element={
+                <AdminPage />
+              }
+            />
+          )}
 
         <Route
           path="*"

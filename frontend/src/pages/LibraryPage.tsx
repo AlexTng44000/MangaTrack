@@ -14,8 +14,8 @@ import {
 } from '../api/mangatrack.api';
 
 import type {
-    LibraryStatus,
     LibraryEntry,
+    LibraryStatus,
 } from '../types/library';
 
 import type {
@@ -26,12 +26,41 @@ import {
     useNavigate,
 } from 'react-router-dom';
 
+function getStatusLabel(
+    status: LibraryStatus,
+): string {
+    switch (status) {
+        case 'a_commencer':
+            return 'À commencer';
+
+        case 'en_cours':
+            return 'En cours';
+
+        case 'termine':
+            return 'Terminé';
+
+        case 'abandonne':
+            return 'Abandonné';
+
+        default:
+            return status;
+    }
+}
+
 export function LibraryPage() {
     const [library, setLibrary] =
         useState<LibraryEntry[]>([]);
 
     const [catalog, setCatalog] =
         useState<CatalogItem[]>([]);
+
+    const [
+        progressInputs,
+        setProgressInputs,
+    ] =
+        useState<Record<number, string>>(
+            {},
+        );
 
     const [loading, setLoading] =
         useState(true);
@@ -63,24 +92,49 @@ export function LibraryPage() {
                 setCatalog(
                     catalogData,
                 );
+
+                setProgressInputs(
+                    Object.fromEntries(
+                        libraryData.map(
+                            (entry) => [
+                                entry.id,
+                                String(
+                                    entry.progress,
+                                ),
+                            ],
+                        ),
+                    ),
+                );
             } finally {
-                setLoading(false);
+                setLoading(
+                    false,
+                );
             }
         }
 
         loadLibrary();
     }, []);
 
-    async function changeProgress(
+    async function saveProgress(
         entry: LibraryEntry,
         work: CatalogItem | undefined,
-        value: number,
+        requestedProgress: number,
     ) {
-        let newProgress =
-            Math.max(
-                0,
-                entry.progress + value,
+        if (
+            !Number.isInteger(
+                requestedProgress,
+            ) ||
+            requestedProgress < 0
+        ) {
+            alert(
+                'La progression doit être un nombre entier positif.',
             );
+
+            return;
+        }
+
+        let newProgress =
+            requestedProgress;
 
         if (work?.total != null) {
             newProgress =
@@ -100,8 +154,6 @@ export function LibraryPage() {
             let newStatus =
                 entry.status;
 
-            // On ne modifie pas automatiquement
-            // un statut "abandonné".
             if (
                 entry.status !==
                 'abandonne'
@@ -114,7 +166,8 @@ export function LibraryPage() {
                     newStatus =
                         'termine';
                 } else if (
-                    newProgress === 0
+                    newProgress ===
+                    0
                 ) {
                     newStatus =
                         'a_commencer';
@@ -145,6 +198,16 @@ export function LibraryPage() {
                                 : item,
                     ),
             );
+
+            setProgressInputs(
+                (current) => ({
+                    ...current,
+                    [entry.id]:
+                        String(
+                            updated.progress,
+                        ),
+                }),
+            );
         } catch {
             alert(
                 'Impossible de modifier la progression.',
@@ -152,9 +215,42 @@ export function LibraryPage() {
         }
     }
 
-    if (loading) {
-        return <p>Chargement...</p>;
+    async function changeProgress(
+        entry: LibraryEntry,
+        work: CatalogItem | undefined,
+        value: number,
+    ) {
+        await saveProgress(
+            entry,
+            work,
+            entry.progress + value,
+        );
     }
+
+    async function handleDirectProgress(
+        entry: LibraryEntry,
+        work: CatalogItem | undefined,
+    ) {
+        const rawValue =
+            progressInputs[
+            entry.id
+            ] ??
+            String(
+                entry.progress,
+            );
+
+        const value =
+            Number(
+                rawValue,
+            );
+
+        await saveProgress(
+            entry,
+            work,
+            value,
+        );
+    }
+
     async function handleFavoriteToggle(
         entry: LibraryEntry,
     ) {
@@ -169,7 +265,8 @@ export function LibraryPage() {
                 (currentLibrary) =>
                     currentLibrary.map(
                         (item) =>
-                            item.id === entry.id
+                            item.id ===
+                                entry.id
                                 ? updatedEntry
                                 : item,
                     ),
@@ -196,7 +293,8 @@ export function LibraryPage() {
                 (currentLibrary) =>
                     currentLibrary.map(
                         (item) =>
-                            item.id === entry.id
+                            item.id ===
+                                entry.id
                                 ? updatedEntry
                                 : item,
                     ),
@@ -207,6 +305,7 @@ export function LibraryPage() {
             );
         }
     }
+
     async function handleRemoveRating(
         entry: LibraryEntry,
     ) {
@@ -221,7 +320,8 @@ export function LibraryPage() {
                 (currentLibrary) =>
                     currentLibrary.map(
                         (item) =>
-                            item.id === entry.id
+                            item.id ===
+                                entry.id
                                 ? updatedEntry
                                 : item,
                     ),
@@ -232,202 +332,14 @@ export function LibraryPage() {
             );
         }
     }
-    return (
-        <main>
-            <h2>Ma bibliothèque</h2>
 
-            <div className="catalog">
-                {library.map((entry) => {
-                    const work = catalog.find(
-                        (item) =>
-                            item.id ===
-                            entry.catalogItemId,
-                    );
-
-                    return (
-                        <article
-                            key={entry.id}
-                            className="catalog-card"
-                        >
-                            <span className="media-type">
-                                {work?.type ?? 'Œuvre'}
-                            </span>
-
-                            <h3>
-                                {work?.title ??
-                                    `Œuvre #${entry.catalogItemId}`}
-                            </h3>
-                            <button
-                                type="button"
-                                onClick={() =>
-                                    handleFavoriteToggle(entry)
-                                }
-                                aria-label={
-                                    entry.isFavorite
-                                        ? 'Retirer des favoris'
-                                        : 'Ajouter aux favoris'
-                                }
-                            >
-                                {entry.isFavorite
-                                    ? '♥ Favori'
-                                    : '♡ Ajouter aux favoris'}
-                            </button>
-                            <button
-                                type="button"
-                                onClick={() =>
-                                    navigate(
-                                        `/catalog/${entry.catalogItemId}`,
-                                    )
-                                }
-                            >
-                                Voir la fiche
-                            </button>
-                            <label>
-                                Statut :{' '}
-                                <select
-                                    value={entry.status}
-                                    onChange={(event) =>
-                                        handleStatusChange(
-                                            entry.id,
-                                            event.target
-                                                .value as LibraryStatus,
-                                        )
-                                    }
-                                >
-                                    <option value="a_commencer">
-                                        À commencer
-                                    </option>
-
-                                    <option value="en_cours">
-                                        En cours
-                                    </option>
-
-                                    <option value="termine">
-                                        Terminé
-                                    </option>
-
-                                    <option value="abandonne">
-                                        Abandonné
-                                    </option>
-                                </select>
-                            </label>
-
-                            <p>
-                                {work?.type === 'anime'
-                                    ? 'Épisodes vus'
-                                    : work?.type === 'manga'
-                                        ? 'Chapitres lus'
-                                        : 'Progression'}
-                                {' : '}
-                                {entry.progress}
-
-                                {work?.total != null &&
-                                    ` / ${work.total}`}
-                            </p>
-                            <div className="rating-control">
-                                <label
-                                    htmlFor={`rating-${entry.id}`}
-                                >
-                                    Ma note :{' '}
-                                    <strong>
-                                        {entry.rating === null
-                                            ? 'Pas encore noté'
-                                            : `${entry.rating} / 10`}
-                                    </strong>
-                                </label>
-
-                                <input
-                                    id={`rating-${entry.id}`}
-                                    type="range"
-                                    min="0"
-                                    max="10"
-                                    step="1"
-                                    value={
-                                        entry.rating ?? 5
-                                    }
-                                    onChange={(event) =>
-                                        handleRatingChange(
-                                            entry,
-                                            Number(
-                                                event.target.value,
-                                            ),
-                                        )
-                                    }
-                                />
-
-                                <div className="rating-scale">
-                                    <span>0</span>
-                                    <span>10</span>
-                                </div>
-
-                                {entry.rating !== null && (
-                                    <button
-                                        type="button"
-                                        onClick={() =>
-                                            handleRemoveRating(
-                                                entry,
-                                            )
-                                        }
-                                    >
-                                        Retirer la note
-                                    </button>
-                                )}
-                            </div>
-                            <div className="progress-actions">
-                                <button
-                                    onClick={() =>
-                                        changeProgress(
-                                            entry,
-                                            work,
-                                            -1,
-                                        )
-                                    }
-                                    disabled={
-                                        entry.progress === 0
-                                    }
-                                >
-                                    −
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={() =>
-                                        handleDelete(entry.id)
-                                    }
-                                >
-                                    Supprimer
-                                </button>
-                                <strong>
-                                    {entry.progress}
-                                </strong>
-
-                                <button
-                                    onClick={() =>
-                                        changeProgress(
-                                            entry,
-                                            work,
-                                            1,
-                                        )
-                                    }
-                                    disabled={
-                                        work?.total != null &&
-                                        entry.progress >=
-                                        work.total
-                                    }
-                                >
-                                    +
-                                </button>
-                            </div>
-                        </article>
-                    );
-                })}
-            </div>
-        </main>
-    );
     async function handleDelete(
         id: number,
     ) {
         try {
-            await deleteLibraryEntry(id);
+            await deleteLibraryEntry(
+                id,
+            );
 
             setLibrary(
                 (currentLibrary) =>
@@ -469,4 +381,454 @@ export function LibraryPage() {
             );
         }
     }
+
+    if (loading) {
+        return (
+            <main className="library-page">
+                <p>
+                    Chargement de ta bibliothèque...
+                </p>
+            </main>
+        );
+    }
+
+    return (
+        <main className="library-page">
+            <section className="library-heading">
+                <div>
+                    <span className="page-eyebrow">
+                        Ma collection
+                    </span>
+
+                    <h2>
+                        Ma bibliothèque
+                    </h2>
+
+                    <p>
+                        Retrouve tes œuvres,
+                        suis ta progression et
+                        organise tes prochaines
+                        lectures ou sessions.
+                    </p>
+                </div>
+
+                <div className="library-count">
+                    <strong>
+                        {library.length}
+                    </strong>
+
+                    <span>
+                        œuvre
+                        {library.length > 1
+                            ? 's'
+                            : ''}
+                    </span>
+                </div>
+            </section>
+
+            {library.length === 0 ? (
+                <section className="library-empty">
+                    <span>
+                        Ta bibliothèque est vide
+                    </span>
+
+                    <h3>
+                        Commence ta collection
+                    </h3>
+
+                    <p>
+                        Parcours le catalogue et
+                        ajoute les mangas ou anime
+                        que tu souhaites suivre.
+                    </p>
+
+                    <button
+                        type="button"
+                        onClick={() =>
+                            navigate(
+                                '/catalog',
+                            )
+                        }
+                    >
+                        Explorer le catalogue
+                    </button>
+                </section>
+            ) : (
+                <div className="library-grid">
+                    {library.map(
+                        (entry) => {
+                            const work =
+                                catalog.find(
+                                    (item) =>
+                                        item.id ===
+                                        entry.catalogItemId,
+                                );
+
+                            const total =
+                                work?.total ??
+                                null;
+
+                            const progressPercent =
+                                total != null &&
+                                    total > 0
+                                    ? Math.min(
+                                        100,
+                                        Math.round(
+                                            (
+                                                entry.progress /
+                                                total
+                                            ) *
+                                            100,
+                                        ),
+                                    )
+                                    : 0;
+
+                            const progressLabel =
+                                work?.type ===
+                                    'anime'
+                                    ? 'Épisodes vus'
+                                    : work?.type ===
+                                        'manga'
+                                        ? 'Chapitres lus'
+                                        : 'Progression';
+
+                            return (
+                                <article
+                                    key={
+                                        entry.id
+                                    }
+                                    className={
+                                        entry.isFavorite
+                                            ? 'library-card library-card-favorite'
+                                            : 'library-card'
+                                    }
+                                >
+                                    <div className="library-card-top">
+                                        <span className="media-type">
+                                            {work?.type ??
+                                                'Œuvre'}
+                                        </span>
+
+                                        <button
+                                            type="button"
+                                            className={
+                                                entry.isFavorite
+                                                    ? 'favorite-button favorite-button-active'
+                                                    : 'favorite-button'
+                                            }
+                                            onClick={() =>
+                                                handleFavoriteToggle(
+                                                    entry,
+                                                )
+                                            }
+                                            aria-label={
+                                                entry.isFavorite
+                                                    ? 'Retirer des favoris'
+                                                    : 'Ajouter aux favoris'
+                                            }
+                                        >
+                                            {entry.isFavorite
+                                                ? '♥'
+                                                : '♡'}
+                                        </button>
+                                    </div>
+
+                                    <div className="library-card-title">
+                                        <h3>
+                                            {work?.title ??
+                                                `Œuvre #${entry.catalogItemId}`}
+                                        </h3>
+
+                                        <span
+                                            className={`status-badge status-${entry.status}`}
+                                        >
+                                            {getStatusLabel(
+                                                entry.status,
+                                            )}
+                                        </span>
+                                    </div>
+
+                                    <div className="library-section">
+                                        <label
+                                            className="library-field"
+                                            htmlFor={`status-${entry.id}`}
+                                        >
+                                            <span>
+                                                Statut
+                                            </span>
+
+                                            <select
+                                                id={`status-${entry.id}`}
+                                                value={
+                                                    entry.status
+                                                }
+                                                onChange={(
+                                                    event,
+                                                ) =>
+                                                    handleStatusChange(
+                                                        entry.id,
+                                                        event
+                                                            .target
+                                                            .value as LibraryStatus,
+                                                    )
+                                                }
+                                            >
+                                                <option value="a_commencer">
+                                                    À commencer
+                                                </option>
+
+                                                <option value="en_cours">
+                                                    En cours
+                                                </option>
+
+                                                <option value="termine">
+                                                    Terminé
+                                                </option>
+
+                                                <option value="abandonne">
+                                                    Abandonné
+                                                </option>
+                                            </select>
+                                        </label>
+                                    </div>
+
+                                    <div className="library-section">
+                                        <div className="progress-header">
+                                            <span>
+                                                {progressLabel}
+                                            </span>
+
+                                            <strong>
+                                                {
+                                                    entry.progress
+                                                }
+
+                                                {total != null &&
+                                                    ` / ${total}`}
+                                            </strong>
+                                        </div>
+
+                                        {total != null &&
+                                            total > 0 && (
+                                                <div className="library-progress-track">
+                                                    <div
+                                                        className="library-progress-fill"
+                                                        style={{
+                                                            width: `${progressPercent}%`,
+                                                        }}
+                                                    />
+                                                </div>
+                                            )}
+
+                                        <div className="library-progress-controls">
+                                            <button
+                                                type="button"
+                                                onClick={() =>
+                                                    changeProgress(
+                                                        entry,
+                                                        work,
+                                                        -1,
+                                                    )
+                                                }
+                                                disabled={
+                                                    entry.progress ===
+                                                    0
+                                                }
+                                                aria-label="Diminuer la progression"
+                                            >
+                                                −
+                                            </button>
+
+                                            <div className="library-progress-direct">
+                                                <input
+                                                    type="number"
+                                                    min="0"
+                                                    max={
+                                                        total ??
+                                                        undefined
+                                                    }
+                                                    step="1"
+                                                    inputMode="numeric"
+                                                    aria-label={`Saisir la progression de ${work?.title ?? 'cette œuvre'}`}
+                                                    value={
+                                                        progressInputs[
+                                                        entry.id
+                                                        ] ??
+                                                        String(
+                                                            entry.progress,
+                                                        )
+                                                    }
+                                                    onChange={(
+                                                        event,
+                                                    ) =>
+                                                        setProgressInputs(
+                                                            (
+                                                                current,
+                                                            ) => ({
+                                                                ...current,
+                                                                [entry.id]:
+                                                                    event
+                                                                        .target
+                                                                        .value,
+                                                            }),
+                                                        )
+                                                    }
+                                                    onKeyDown={(
+                                                        event,
+                                                    ) => {
+                                                        if (
+                                                            event.key ===
+                                                            'Enter'
+                                                        ) {
+                                                            handleDirectProgress(
+                                                                entry,
+                                                                work,
+                                                            );
+                                                        }
+                                                    }}
+                                                />
+
+                                                <button
+                                                    type="button"
+                                                    onClick={() =>
+                                                        handleDirectProgress(
+                                                            entry,
+                                                            work,
+                                                        )
+                                                    }
+                                                >
+                                                    Valider
+                                                </button>
+                                            </div>
+
+                                            <button
+                                                type="button"
+                                                onClick={() =>
+                                                    changeProgress(
+                                                        entry,
+                                                        work,
+                                                        1,
+                                                    )
+                                                }
+                                                disabled={
+                                                    total !=
+                                                    null &&
+                                                    entry.progress >=
+                                                    total
+                                                }
+                                                aria-label="Augmenter la progression"
+                                            >
+                                                +
+                                            </button>
+                                        </div>
+
+                                        {total != null &&
+                                            total > 0 && (
+                                                <span className="library-progress-percent">
+                                                    {
+                                                        progressPercent
+                                                    }
+                                                    % terminé
+                                                </span>
+                                            )}
+                                    </div>
+
+                                    <div className="library-section rating-control">
+                                        <div className="rating-heading">
+                                            <span>
+                                                Ma note
+                                            </span>
+
+                                            <strong>
+                                                {entry.rating ===
+                                                    null
+                                                    ? 'Non noté'
+                                                    : `${entry.rating}/10`}
+                                            </strong>
+                                        </div>
+
+                                        <input
+                                            id={`rating-${entry.id}`}
+                                            aria-label={`Note pour ${work?.title ?? 'cette œuvre'}`}
+                                            type="range"
+                                            min="0"
+                                            max="10"
+                                            step="1"
+                                            value={
+                                                entry.rating ??
+                                                5
+                                            }
+                                            onChange={(
+                                                event,
+                                            ) =>
+                                                handleRatingChange(
+                                                    entry,
+                                                    Number(
+                                                        event
+                                                            .target
+                                                            .value,
+                                                    ),
+                                                )
+                                            }
+                                        />
+
+                                        <div className="rating-scale">
+                                            <span>
+                                                0
+                                            </span>
+
+                                            <span>
+                                                10
+                                            </span>
+                                        </div>
+
+                                        {entry.rating !==
+                                            null && (
+                                                <button
+                                                    type="button"
+                                                    className="rating-remove"
+                                                    onClick={() =>
+                                                        handleRemoveRating(
+                                                            entry,
+                                                        )
+                                                    }
+                                                >
+                                                    Retirer la note
+                                                </button>
+                                            )}
+                                    </div>
+
+                                    <div className="library-card-actions">
+                                        <button
+                                            type="button"
+                                            className="library-details-button"
+                                            onClick={() =>
+                                                navigate(
+                                                    `/catalog/${entry.catalogItemId}`,
+                                                )
+                                            }
+                                        >
+                                            Voir la fiche
+                                        </button>
+
+                                        <button
+                                            type="button"
+                                            className="library-delete-button"
+                                            onClick={() =>
+                                                handleDelete(
+                                                    entry.id,
+                                                )
+                                            }
+                                        >
+                                            Supprimer
+                                        </button>
+                                    </div>
+                                </article>
+                            );
+                        },
+                    )}
+                </div>
+            )}
+        </main>
+    );
 }

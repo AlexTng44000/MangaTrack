@@ -364,6 +364,52 @@ export async function getAdminUsers():
     return response.json();
 }
 
+
+export async function deleteAdminUser(
+    id: number,
+): Promise<void> {
+    const response =
+        await authenticatedFetch(
+            `${API_URL}/admin/users/${id}`,
+            {
+                method: 'DELETE',
+            },
+        );
+
+    if (response.ok) {
+        return;
+    }
+
+    let message =
+        'Impossible de supprimer cet utilisateur';
+
+    try {
+        const data:
+            { error?: string } =
+            await response.json();
+
+        if (
+            data.error ===
+            'ADMIN_USER_PROTECTED'
+        ) {
+            message =
+                'Les comptes administrateurs sont protégés.';
+        } else if (
+            data.error ===
+            'USER_NOT_FOUND'
+        ) {
+            message =
+                'Cet utilisateur n’existe plus.';
+        }
+    } catch {
+        // La réponse ne contient pas forcément de JSON.
+    }
+
+    throw new Error(
+        message,
+    );
+}
+
 export async function deleteLibraryEntry(
     id: number,
 ): Promise<void> {

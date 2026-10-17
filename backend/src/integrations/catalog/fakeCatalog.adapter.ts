@@ -151,6 +151,8 @@ export class FakeCatalogAdapter
             seasonYear: null,
             averageScore: null,
             relations: [],
+            streamingEpisodes: [],
+            externalLinks: [],
         };
     }
 

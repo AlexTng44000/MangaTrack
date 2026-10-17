@@ -40,10 +40,6 @@ const worker =
                     'sent',
                 );
             }
-
-            console.log(
-                `Notification ${job.id} envoyée`,
-            );
         },
 
         {
@@ -54,18 +50,72 @@ const worker =
         },
     );
 
-worker.on('completed', (job) => {
-    console.log(
-        `Notification ${job.id} envoyée`,
-    );
-});
+worker.on(
+    'completed',
+    (job) => {
+        console.log(
+            `Notification ${job.id} envoyée`,
+        );
+    },
+);
 
-worker.on('failed', (job, error) => {
-    console.error(
-        `Notification ${job?.id} échouée`,
+worker.on(
+    'failed',
+    async (
+        job,
         error,
-    );
-});
+    ) => {
+        if (!job) {
+            console.error(
+                'Notification inconnue échouée',
+                error,
+            );
+
+            return;
+        }
+
+        const maxAttempts =
+            job.opts.attempts ??
+            1;
+
+        const attemptsMade =
+            job.attemptsMade;
+
+        if (
+            attemptsMade >=
+            maxAttempts
+        ) {
+            console.error(
+                `Notification ${job.id} définitivement échouée après ${attemptsMade} tentative(s)`,
+                error,
+            );
+
+            if (
+                job.data.reminderId
+            ) {
+                try {
+                    await reminderRepository.updateStatus(
+                        job.data.reminderId,
+                        'failed',
+                    );
+                } catch (
+                updateError
+                ) {
+                    console.error(
+                        `Impossible de marquer le rappel ${job.data.reminderId} comme failed`,
+                        updateError,
+                    );
+                }
+            }
+
+            return;
+        }
+
+        console.warn(
+            `Notification ${job.id} échouée - nouvelle tentative prévue (${attemptsMade}/${maxAttempts})`,
+        );
+    },
+);
 
 console.log(
     'Worker notifications démarré',

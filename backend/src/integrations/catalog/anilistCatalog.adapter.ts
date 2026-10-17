@@ -1,11 +1,13 @@
 import type {
     CalendarRelease,
     CatalogDetails,
+    CatalogExternalLink,
     CatalogFilters,
     CatalogItem,
     CatalogPageResult,
     CatalogPort,
     CatalogRelation,
+    CatalogStreamingEpisode,
 } from '../../modules/catalog/catalog.types.js';
 
 interface AniListMedia {
@@ -506,6 +508,22 @@ export class AniListCatalogAdapter
                     seasonYear
                     averageScore
 
+                    streamingEpisodes {
+                        title
+                        thumbnail
+                        url
+                        site
+                    }
+
+                    externalLinks {
+                        site
+                        url
+                        type
+                        language
+                        icon
+                        isDisabled
+                    }
+
                     relations {
                         edges {
                             relationType
@@ -616,6 +634,42 @@ export class AniListCatalogAdapter
                         averageScore:
                         number | null;
 
+                        streamingEpisodes:
+                        Array<{
+                            title:
+                            string | null;
+
+                            thumbnail:
+                            string | null;
+
+                            url:
+                            string | null;
+
+                            site:
+                            string | null;
+                        }>;
+
+                        externalLinks:
+                        Array<{
+                            site:
+                            string;
+
+                            url:
+                            string | null;
+
+                            type:
+                            string | null;
+
+                            language:
+                            string | null;
+
+                            icon:
+                            string | null;
+
+                            isDisabled:
+                            boolean | null;
+                        }>;
+
                         relations: {
                             edges: Array<{
                                 relationType:
@@ -675,6 +729,66 @@ export class AniListCatalogAdapter
         if (!item) {
             return null;
         }
+
+        const streamingEpisodes:
+            CatalogStreamingEpisode[] =
+            item.streamingEpisodes
+                .flatMap((episode) => {
+                    if (
+                        !episode.url ||
+                        !episode.site
+                    ) {
+                        return [];
+                    }
+
+                    return [{
+                        title:
+                            episode.title ??
+                            'Épisode',
+
+                        thumbnail:
+                            episode.thumbnail,
+
+                        url:
+                            episode.url,
+
+                        site:
+                            episode.site,
+                    }];
+                });
+
+        const externalLinks:
+            CatalogExternalLink[] =
+            item.externalLinks
+                .flatMap((link) => {
+                    if (
+                        !link.url ||
+                        link.isDisabled ===
+                        true
+                    ) {
+                        return [];
+                    }
+
+                    return [{
+                        site:
+                            link.site,
+
+                        url:
+                            link.url,
+
+                        type:
+                            link.type,
+
+                        language:
+                            link.language,
+
+                        icon:
+                            link.icon,
+
+                        isDisabled:
+                            link.isDisabled,
+                    }];
+                });
 
         const relations =
             item.relations.edges
@@ -762,6 +876,10 @@ export class AniListCatalogAdapter
 
             averageScore:
                 item.averageScore,
+
+            streamingEpisodes,
+
+            externalLinks,
 
             relations,
         };

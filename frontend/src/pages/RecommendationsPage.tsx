@@ -394,39 +394,99 @@ export function RecommendationsPage() {
 
     if (loading) {
         return (
-            <main>
-                <h2>
-                    Recommandations
-                </h2>
+            <main className="recommendations-page">
+                <section className="recommendations-heading">
+                    <div>
+                        <span className="page-eyebrow">
+                            Pour toi
+                        </span>
 
-                <p>
-                    Analyse de ta bibliothèque...
-                </p>
+                        <h2>
+                            Recommandations
+                        </h2>
+
+                        <p>
+                            Analyse de ta bibliothèque...
+                        </p>
+                    </div>
+                </section>
             </main>
         );
     }
 
     return (
-        <main>
-            <h2>
-                Recommandé pour toi
-            </h2>
+        <main className="recommendations-page">
+            <section className="recommendations-heading">
+                <div>
+                    <span className="page-eyebrow">
+                        Pour toi
+                    </span>
 
-            {favoriteGenres.length > 0 ? (
-                <p>
-                    Basé principalement sur tes goûts pour :{' '}
+                    <h2>
+                        Recommandé pour toi
+                    </h2>
+
+                    <p>
+                        MangaTrack analyse tes favoris,
+                        tes notes et tes statuts pour
+                        proposer des œuvres proches de
+                        tes goûts.
+                    </p>
+                </div>
+
+                <div className="recommendations-count">
                     <strong>
-                        {favoriteGenres.join(
-                            ', ',
-                        )}
+                        {
+                            recommendations.length
+                        }
                     </strong>
-                </p>
-            ) : (
-                <p>
-                    Ajoute et note davantage d'œuvres pour
-                    améliorer tes recommandations.
-                </p>
-            )}
+
+                    <span>
+                        suggestion
+                        {recommendations.length >
+                            1
+                            ? 's'
+                            : ''}
+                    </span>
+                </div>
+            </section>
+
+            <section className="recommendation-profile">
+                <div>
+                    <span className="page-eyebrow">
+                        Profil de goûts
+                    </span>
+
+                    <h3>
+                        Tes genres dominants
+                    </h3>
+                </div>
+
+                {favoriteGenres.length >
+                    0 ? (
+                    <div className="favorite-genres">
+                        {favoriteGenres.map(
+                            (genre) => (
+                                <span
+                                    key={
+                                        genre
+                                    }
+                                >
+                                    {
+                                        genre
+                                    }
+                                </span>
+                            ),
+                        )}
+                    </div>
+                ) : (
+                    <p>
+                        Ajoute et note davantage
+                        d’œuvres pour améliorer
+                        tes recommandations.
+                    </p>
+                )}
+            </section>
 
             {error && (
                 <p className="error-message">
@@ -436,93 +496,150 @@ export function RecommendationsPage() {
 
             {recommendations.length ===
                 0 &&
-                !error && (
+                !error ? (
+                <section className="recommendations-empty">
+                    <span>
+                        Pas encore de suggestion
+                    </span>
+
+                    <h3>
+                        Enrichis ta bibliothèque
+                    </h3>
+
                     <p>
-                        Aucune recommandation disponible.
+                        Plus tu notes et suis des
+                        œuvres, plus MangaTrack peut
+                        affiner tes recommandations.
                     </p>
-                )}
+                </section>
+            ) : (
+                <div className="recommendations-grid">
+                    {recommendations.map(
+                        (work) => {
+                            const isAdded =
+                                addedIds.has(
+                                    work.id,
+                                );
 
-            <div className="recommendations-grid">
-                {recommendations.map(
-                    (work) => (
-                        <article
-                            key={
-                                work.id
-                            }
-                            className="recommendation-card"
-                        >
-                            <span className="media-type">
-                                {
-                                    work.type
-                                }
-                            </span>
-
-                            <h3>
-                                {
-                                    work.title
-                                }
-                            </h3>
-
-                            <p>
-                                {work.genres.join(
-                                    ' • ',
-                                )}
-                            </p>
-
-                            {work.matchedGenres
-                                .length >
-                                0 && (
-                                    <p className="recommendation-reason">
-                                        Correspond à tes goûts :{' '}
-                                        <strong>
-                                            {work.matchedGenres.join(
-                                                ', ',
-                                            )}
-                                        </strong>
-                                    </p>
-                                )}
-
-                            <div className="recommendation-actions">
-                                <button
-                                    type="button"
-                                    onClick={() =>
-                                        navigate(
-                                            `/catalog/${work.id}`,
-                                        )
-                                    }
-                                >
-                                    Voir la fiche
-                                </button>
-
-                                <button
-                                    type="button"
-                                    disabled={
-                                        addedIds.has(
-                                            work.id,
-                                        ) ||
-                                        addingId ===
+                            return (
+                                <article
+                                    key={
                                         work.id
                                     }
-                                    onClick={() =>
-                                        handleAdd(
-                                            work.id,
-                                        )
+                                    className={
+                                        isAdded
+                                            ? 'recommendation-card recommendation-card-added'
+                                            : 'recommendation-card'
                                     }
                                 >
-                                    {addedIds.has(
-                                        work.id,
-                                    )
-                                        ? 'Ajouté'
-                                        : addingId ===
-                                            work.id
-                                            ? 'Ajout...'
-                                            : 'Ajouter à ma bibliothèque'}
-                                </button>
-                            </div>
-                        </article>
-                    ),
-                )}
-            </div>
+                                    <div className="recommendation-card-top">
+                                        <span className="media-type">
+                                            {
+                                                work.type
+                                            }
+                                        </span>
+
+                                        <span className="recommendation-score">
+                                            Affinité{' '}
+                                            <strong>
+                                                {
+                                                    work.score
+                                                }
+                                            </strong>
+                                        </span>
+                                    </div>
+
+                                    <div className="recommendation-card-main">
+                                        <h3>
+                                            {
+                                                work.title
+                                            }
+                                        </h3>
+
+                                        <div className="recommendation-genres">
+                                            {work.genres
+                                                .slice(
+                                                    0,
+                                                    5,
+                                                )
+                                                .map(
+                                                    (
+                                                        genre,
+                                                    ) => (
+                                                        <span
+                                                            key={
+                                                                genre
+                                                            }
+                                                        >
+                                                            {
+                                                                genre
+                                                            }
+                                                        </span>
+                                                    ),
+                                                )}
+                                        </div>
+
+                                        {work.matchedGenres
+                                            .length >
+                                            0 && (
+                                                <div className="recommendation-reason">
+                                                    <span>
+                                                        Pourquoi cette suggestion ?
+                                                    </span>
+
+                                                    <p>
+                                                        Correspond à tes goûts pour{' '}
+                                                        <strong>
+                                                            {work.matchedGenres.join(
+                                                                ', ',
+                                                            )}
+                                                        </strong>
+                                                    </p>
+                                                </div>
+                                            )}
+                                    </div>
+
+                                    <div className="recommendation-actions">
+                                        <button
+                                            type="button"
+                                            className="recommendation-details-button"
+                                            onClick={() =>
+                                                navigate(
+                                                    `/catalog/${work.id}`,
+                                                )
+                                            }
+                                        >
+                                            Voir la fiche
+                                        </button>
+
+                                        <button
+                                            type="button"
+                                            className="recommendation-add-button"
+                                            disabled={
+                                                isAdded ||
+                                                addingId ===
+                                                work.id
+                                            }
+                                            onClick={() =>
+                                                handleAdd(
+                                                    work.id,
+                                                )
+                                            }
+                                        >
+                                            {isAdded
+                                                ? 'Ajouté ✓'
+                                                : addingId ===
+                                                    work.id
+                                                    ? 'Ajout...'
+                                                    : 'Ajouter'}
+                                        </button>
+                                    </div>
+                                </article>
+                            );
+                        },
+                    )}
+                </div>
+            )}
         </main>
     );
 }

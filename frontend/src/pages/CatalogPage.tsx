@@ -13,6 +13,7 @@ import {
 
 import {
     addToLibrary,
+    deleteLibraryEntry,
     getCatalog,
     getLibrary,
 } from '../api/mangatrack.api';
@@ -21,51 +22,120 @@ import type {
     CatalogItem,
 } from '../types/catalog';
 
+function getTotalLabel(
+    item: CatalogItem,
+): string {
+    if (
+        item.total === null ||
+        item.total === undefined
+    ) {
+        return 'Total inconnu';
+    }
+
+    return item.type === 'anime'
+        ? `${item.total} épisode${item.total > 1 ? 's' : ''}`
+        : `${item.total} chapitre${item.total > 1 ? 's' : ''}`;
+}
+
 export function CatalogPage() {
-    const [items, setItems] =
+    const [
+        items,
+        setItems,
+    ] =
         useState<CatalogItem[]>([]);
 
-    const [loading, setLoading] =
+    const [
+        loading,
+        setLoading,
+    ] =
         useState(true);
 
-    const [error, setError] =
-        useState<string | null>(null);
+    const [
+        error,
+        setError,
+    ] =
+        useState<string | null>(
+            null,
+        );
 
-    const [addedItems, setAddedItems] =
-        useState<number[]>([]);
+    const [
+        libraryEntries,
+        setLibraryEntries,
+    ] =
+        useState<Record<number, number>>(
+            {},
+        );
 
-    const [search, setSearch] =
+    const [
+        removingId,
+        setRemovingId,
+    ] =
+        useState<number | null>(
+            null,
+        );
+
+    const [
+        search,
+        setSearch,
+    ] =
         useState('');
 
-    const [activeSearch, setActiveSearch] =
+    const [
+        activeSearch,
+        setActiveSearch,
+    ] =
         useState('');
 
-    const [searching, setSearching] =
+    const [
+        searching,
+        setSearching,
+    ] =
         useState(false);
 
-    const [page, setPage] =
+    const [
+        page,
+        setPage,
+    ] =
         useState(1);
 
-    const [hasNextPage, setHasNextPage] =
+    const [
+        hasNextPage,
+        setHasNextPage,
+    ] =
         useState(false);
 
-    const [loadingMore, setLoadingMore] =
+    const [
+        loadingMore,
+        setLoadingMore,
+    ] =
         useState(false);
 
-    const [typeFilter, setTypeFilter] =
+    const [
+        typeFilter,
+        setTypeFilter,
+    ] =
         useState<
             '' | 'anime' | 'manga'
         >('');
 
-    const [genreFilter, setGenreFilter] =
+    const [
+        genreFilter,
+        setGenreFilter,
+    ] =
         useState('');
 
-    const [activeType, setActiveType] =
+    const [
+        activeType,
+        setActiveType,
+    ] =
         useState<
             '' | 'anime' | 'manga'
         >('');
 
-    const [activeGenre, setActiveGenre] =
+    const [
+        activeGenre,
+        setActiveGenre,
+    ] =
         useState('');
 
     const navigate =
@@ -73,7 +143,10 @@ export function CatalogPage() {
 
     useEffect(() => {
         Promise.all([
-            getCatalog(undefined, 1),
+            getCatalog(
+                undefined,
+                1,
+            ),
             getLibrary(),
         ])
             .then(
@@ -93,10 +166,14 @@ export function CatalogPage() {
                         catalogData.hasNextPage,
                     );
 
-                    setAddedItems(
-                        libraryData.map(
-                            (entry) =>
-                                entry.catalogItemId,
+                    setLibraryEntries(
+                        Object.fromEntries(
+                            libraryData.map(
+                                (entry) => [
+                                    entry.catalogItemId,
+                                    entry.id,
+                                ],
+                            ),
                         ),
                     );
                 },
@@ -107,7 +184,9 @@ export function CatalogPage() {
                 );
             })
             .finally(() => {
-                setLoading(false);
+                setLoading(
+                    false,
+                );
             });
     }, []);
 
@@ -119,12 +198,25 @@ export function CatalogPage() {
                 catalogItemId,
             );
 
-            setAddedItems(
-                (current) => [
-                    ...current,
-                    catalogItemId,
-                ],
-            );
+            const library =
+                await getLibrary();
+
+            const entry =
+                library.find(
+                    (current) =>
+                        current.catalogItemId ===
+                        catalogItemId,
+                );
+
+            if (entry) {
+                setLibraryEntries(
+                    (current) => ({
+                        ...current,
+                        [catalogItemId]:
+                            entry.id,
+                    }),
+                );
+            }
         } catch {
             alert(
                 'Impossible d’ajouter cette œuvre.',
@@ -132,16 +224,59 @@ export function CatalogPage() {
         }
     }
 
+    async function handleRemove(
+        catalogItemId: number,
+        libraryEntryId: number,
+    ) {
+        setRemovingId(
+            catalogItemId,
+        );
+
+        try {
+            await deleteLibraryEntry(
+                libraryEntryId,
+            );
+
+            setLibraryEntries(
+                (current) => {
+                    const next = {
+                        ...current,
+                    };
+
+                    delete next[
+                        catalogItemId
+                    ];
+
+                    return next;
+                },
+            );
+        } catch {
+            alert(
+                'Impossible de retirer cette œuvre de la bibliothèque.',
+            );
+        } finally {
+            setRemovingId(
+                null,
+            );
+        }
+    }
+
     async function handleSearch(
-        event: FormEvent<HTMLFormElement>,
+        event:
+            FormEvent<HTMLFormElement>,
     ) {
         event.preventDefault();
 
         const normalizedSearch =
             search.trim();
 
-        setSearching(true);
-        setError(null);
+        setSearching(
+            true,
+        );
+
+        setError(
+            null,
+        );
 
         try {
             const result =
@@ -170,6 +305,7 @@ export function CatalogPage() {
             setActiveSearch(
                 normalizedSearch,
             );
+
             setActiveType(
                 typeFilter,
             );
@@ -182,19 +318,40 @@ export function CatalogPage() {
                 'Impossible d’effectuer la recherche.',
             );
         } finally {
-            setSearching(false);
+            setSearching(
+                false,
+            );
         }
     }
 
     async function handleReset() {
-        setSearch('');
-        setActiveSearch('');
-        setError(null);
-        setTypeFilter('');
-        setGenreFilter('');
+        setSearch(
+            '',
+        );
 
-        setActiveType('');
-        setActiveGenre('');
+        setActiveSearch(
+            '',
+        );
+
+        setError(
+            null,
+        );
+
+        setTypeFilter(
+            '',
+        );
+
+        setGenreFilter(
+            '',
+        );
+
+        setActiveType(
+            '',
+        );
+
+        setActiveGenre(
+            '',
+        );
 
         try {
             const result =
@@ -225,8 +382,13 @@ export function CatalogPage() {
         const nextPage =
             page + 1;
 
-        setLoadingMore(true);
-        setError(null);
+        setLoadingMore(
+            true,
+        );
+
+        setError(
+            null,
+        );
 
         try {
             const result =
@@ -259,221 +421,479 @@ export function CatalogPage() {
                 'Impossible de charger davantage d’œuvres.',
             );
         } finally {
-            setLoadingMore(false);
+            setLoadingMore(
+                false,
+            );
         }
     }
 
-    if (loading) {
-        return <p>Chargement...</p>;
-    }
+    const hasActiveFilters =
+        Boolean(
+            activeSearch ||
+            activeType ||
+            activeGenre,
+        );
 
-    if (error) {
-        return <p>{error}</p>;
+    if (loading) {
+        return (
+            <main className="catalog-page">
+                <section className="catalog-heading">
+                    <div>
+                        <span className="page-eyebrow">
+                            Découvrir
+                        </span>
+
+                        <h2>
+                            Catalogue
+                        </h2>
+
+                        <p>
+                            Chargement des œuvres...
+                        </p>
+                    </div>
+                </section>
+            </main>
+        );
     }
 
     return (
-        <main>
+        <main className="catalog-page">
+            <section className="catalog-heading">
+                <div>
+                    <span className="page-eyebrow">
+                        Découvrir
+                    </span>
+
+                    <h2>
+                        Catalogue
+                    </h2>
+
+                    <p>
+                        Recherche un anime ou un manga,
+                        filtre par type ou par genre,
+                        puis ajoute tes découvertes à ta
+                        bibliothèque.
+                    </p>
+                </div>
+
+                <div className="catalog-result-summary">
+                    <strong>
+                        {
+                            items.length
+                        }
+                    </strong>
+
+                    <span>
+                        résultat
+                        {items.length > 1
+                            ? 's affichés'
+                            : ' affiché'}
+                    </span>
+                </div>
+            </section>
+
             <form
                 className="catalog-search"
-                onSubmit={handleSearch}
+                onSubmit={
+                    handleSearch
+                }
             >
-                <input
-                    type="search"
-                    placeholder="Rechercher un manga ou un anime..."
-                    value={search}
-                    onChange={(event) =>
-                        setSearch(
-                            event.target.value,
-                        )
-                    }
-                />
-                <select
-                    value={typeFilter}
-                    onChange={(event) =>
-                        setTypeFilter(
-                            event.target.value as
-                            | ''
-                            | 'anime'
-                            | 'manga',
-                        )
-                    }
-                >
-                    <option value="">
-                        Tous les types
-                    </option>
+                <label className="catalog-search-field">
+                    <span>
+                        Rechercher
+                    </span>
 
-                    <option value="anime">
-                        Anime
-                    </option>
+                    <input
+                        type="search"
+                        placeholder="Titre d’un manga ou d’un anime..."
+                        value={
+                            search
+                        }
+                        onChange={(
+                            event,
+                        ) =>
+                            setSearch(
+                                event
+                                    .target
+                                    .value,
+                            )
+                        }
+                    />
+                </label>
 
-                    <option value="manga">
-                        Manga
-                    </option>
-                </select>
+                <label>
+                    <span>
+                        Type
+                    </span>
 
-                <select
-                    value={genreFilter}
-                    onChange={(event) =>
-                        setGenreFilter(
-                            event.target.value,
-                        )
-                    }
-                >
-                    <option value="">
-                        Tous les genres
-                    </option>
+                    <select
+                        value={
+                            typeFilter
+                        }
+                        onChange={(
+                            event,
+                        ) =>
+                            setTypeFilter(
+                                event
+                                    .target
+                                    .value as
+                                | ''
+                                | 'anime'
+                                | 'manga',
+                            )
+                        }
+                    >
+                        <option value="">
+                            Tous
+                        </option>
 
-                    <option value="Action">
-                        Action
-                    </option>
+                        <option value="anime">
+                            Anime
+                        </option>
 
-                    <option value="Adventure">
-                        Adventure
-                    </option>
+                        <option value="manga">
+                            Manga
+                        </option>
+                    </select>
+                </label>
 
-                    <option value="Comedy">
-                        Comedy
-                    </option>
+                <label>
+                    <span>
+                        Genre
+                    </span>
 
-                    <option value="Drama">
-                        Drama
-                    </option>
+                    <select
+                        value={
+                            genreFilter
+                        }
+                        onChange={(
+                            event,
+                        ) =>
+                            setGenreFilter(
+                                event
+                                    .target
+                                    .value,
+                            )
+                        }
+                    >
+                        <option value="">
+                            Tous
+                        </option>
 
-                    <option value="Fantasy">
-                        Fantasy
-                    </option>
+                        <option value="Action">
+                            Action
+                        </option>
 
-                    <option value="Horror">
-                        Horror
-                    </option>
+                        <option value="Adventure">
+                            Adventure
+                        </option>
 
-                    <option value="Mystery">
-                        Mystery
-                    </option>
+                        <option value="Comedy">
+                            Comedy
+                        </option>
 
-                    <option value="Psychological">
-                        Psychological
-                    </option>
+                        <option value="Drama">
+                            Drama
+                        </option>
 
-                    <option value="Romance">
-                        Romance
-                    </option>
+                        <option value="Fantasy">
+                            Fantasy
+                        </option>
 
-                    <option value="Sci-Fi">
-                        Sci-Fi
-                    </option>
+                        <option value="Horror">
+                            Horror
+                        </option>
 
-                    <option value="Slice of Life">
-                        Slice of Life
-                    </option>
+                        <option value="Mystery">
+                            Mystery
+                        </option>
 
-                    <option value="Supernatural">
-                        Supernatural
-                    </option>
-                </select>
-                <button
-                    type="submit"
-                    disabled={searching}
-                >
-                    {searching
-                        ? 'Recherche...'
-                        : 'Rechercher'}
-                </button>
+                        <option value="Psychological">
+                            Psychological
+                        </option>
 
-                {(
-                    search ||
-                    activeSearch ||
-                    typeFilter ||
-                    activeType ||
-                    genreFilter ||
-                    activeGenre
-                ) && (
-                        <button
-                            type="button"
-                            onClick={
-                                handleReset
-                            }
-                        >
-                            Réinitialiser
-                        </button>
-                    )}
-            </form>
+                        <option value="Romance">
+                            Romance
+                        </option>
 
-            <h2>Catalogue</h2>
+                        <option value="Sci-Fi">
+                            Sci-Fi
+                        </option>
 
-            <div className="catalog">
-                {items.map((item) => {
-                    const isAdded =
-                        addedItems.includes(
-                            item.id,
-                        );
+                        <option value="Slice of Life">
+                            Slice of Life
+                        </option>
 
-                    return (
-                        <article
-                            key={item.id}
-                            className="catalog-card"
-                        >
-                            <span className="media-type">
-                                {item.type}
-                            </span>
+                        <option value="Supernatural">
+                            Supernatural
+                        </option>
+                    </select>
+                </label>
 
-                            <h3>
-                                {item.title}
-                            </h3>
+                <div className="catalog-search-actions">
+                    <button
+                        type="submit"
+                        className="catalog-search-submit"
+                        disabled={
+                            searching
+                        }
+                    >
+                        {searching
+                            ? 'Recherche...'
+                            : 'Rechercher'}
+                    </button>
 
-                            <p>
-                                {item.genres.join(
-                                    ' • ',
-                                )}
-                            </p>
-
+                    {(
+                        search ||
+                        activeSearch ||
+                        typeFilter ||
+                        activeType ||
+                        genreFilter ||
+                        activeGenre
+                    ) && (
                             <button
                                 type="button"
-                                onClick={() =>
-                                    navigate(
-                                        `/catalog/${item.id}`,
-                                    )
+                                className="catalog-reset-button"
+                                onClick={
+                                    handleReset
                                 }
                             >
-                                Voir la fiche
+                                Réinitialiser
                             </button>
+                        )}
+                </div>
+            </form>
 
-                            <button
-                                onClick={() =>
-                                    handleAdd(
-                                        item.id,
-                                    )
-                                }
-                                disabled={
-                                    isAdded
-                                }
-                            >
-                                {isAdded
-                                    ? 'Ajouté ✓'
-                                    : 'Ajouter à ma bibliothèque'}
-                            </button>
-                        </article>
-                    );
-                })}
-            </div>
+            {hasActiveFilters && (
+                <div className="catalog-active-filters">
+                    <span>
+                        Filtres actifs
+                    </span>
 
-            {hasNextPage && (
-                <div className="load-more">
+                    {activeSearch && (
+                        <strong>
+                            “
+                            {
+                                activeSearch
+                            }
+                            ”
+                        </strong>
+                    )}
+
+                    {activeType && (
+                        <strong>
+                            {activeType ===
+                                'anime'
+                                ? 'Anime'
+                                : 'Manga'}
+                        </strong>
+                    )}
+
+                    {activeGenre && (
+                        <strong>
+                            {
+                                activeGenre
+                            }
+                        </strong>
+                    )}
+                </div>
+            )}
+
+            {error && (
+                <p className="error-message">
+                    {error}
+                </p>
+            )}
+
+            {items.length === 0 &&
+                !error ? (
+                <section className="catalog-empty">
+                    <span>
+                        Aucun résultat
+                    </span>
+
+                    <h3>
+                        Aucune œuvre ne correspond
+                    </h3>
+
+                    <p>
+                        Essaie un autre titre ou retire
+                        certains filtres.
+                    </p>
+
                     <button
                         type="button"
                         onClick={
-                            handleLoadMore
-                        }
-                        disabled={
-                            loadingMore
+                            handleReset
                         }
                     >
-                        {loadingMore
-                            ? 'Chargement...'
-                            : 'Charger plus'}
+                        Réinitialiser la recherche
                     </button>
+                </section>
+            ) : (
+                <div className="catalog">
+                    {items.map(
+                        (item) => {
+                            const libraryEntryId =
+                                libraryEntries[
+                                item.id
+                                ];
+
+                            const isAdded =
+                                libraryEntryId !==
+                                undefined;
+
+                            return (
+                                <article
+                                    key={
+                                        item.id
+                                    }
+                                    className={
+                                        isAdded
+                                            ? 'catalog-card catalog-card-added'
+                                            : 'catalog-card'
+                                    }
+                                >
+                                    <div className="catalog-card-top">
+                                        <span className="media-type">
+                                            {
+                                                item.type
+                                            }
+                                        </span>
+
+                                        {isAdded && (
+                                            <span className="catalog-added-badge">
+                                                ✓ Bibliothèque
+                                            </span>
+                                        )}
+                                    </div>
+
+                                    <div className="catalog-card-main">
+                                        <h3>
+                                            {
+                                                item.title
+                                            }
+                                        </h3>
+
+                                        <div className="catalog-genres">
+                                            {item.genres
+                                                .slice(
+                                                    0,
+                                                    4,
+                                                )
+                                                .map(
+                                                    (
+                                                        genre,
+                                                    ) => (
+                                                        <span
+                                                            key={
+                                                                genre
+                                                            }
+                                                        >
+                                                            {
+                                                                genre
+                                                            }
+                                                        </span>
+                                                    ),
+                                                )}
+                                        </div>
+
+                                        <div className="catalog-card-meta">
+                                            <span>
+                                                {
+                                                    getTotalLabel(
+                                                        item,
+                                                    )
+                                                }
+                                            </span>
+
+                                            {item.genres.length >
+                                                4 && (
+                                                    <span>
+                                                        +
+                                                        {item
+                                                            .genres
+                                                            .length -
+                                                            4}{' '}
+                                                        genres
+                                                    </span>
+                                                )}
+                                        </div>
+                                    </div>
+
+                                    <div className="catalog-card-actions">
+                                        <button
+                                            type="button"
+                                            className="catalog-details-button"
+                                            onClick={() =>
+                                                navigate(
+                                                    `/catalog/${item.id}`,
+                                                )
+                                            }
+                                        >
+                                            Voir la fiche
+                                        </button>
+
+                                        {isAdded ? (
+                                            <button
+                                                type="button"
+                                                className="catalog-remove-button"
+                                                disabled={
+                                                    removingId ===
+                                                    item.id
+                                                }
+                                                onClick={() =>
+                                                    handleRemove(
+                                                        item.id,
+                                                        libraryEntryId,
+                                                    )
+                                                }
+                                            >
+                                                {removingId ===
+                                                    item.id
+                                                    ? 'Retrait...'
+                                                    : 'Retirer'}
+                                            </button>
+                                        ) : (
+                                            <button
+                                                type="button"
+                                                className="catalog-add-button"
+                                                onClick={() =>
+                                                    handleAdd(
+                                                        item.id,
+                                                    )
+                                                }
+                                            >
+                                                Ajouter
+                                            </button>
+                                        )}
+                                    </div>
+                                </article>
+                            );
+                        },
+                    )}
                 </div>
             )}
+
+            {hasNextPage &&
+                items.length >
+                0 && (
+                    <div className="load-more">
+                        <button
+                            type="button"
+                            onClick={
+                                handleLoadMore
+                            }
+                            disabled={
+                                loadingMore
+                            }
+                        >
+                            {loadingMore
+                                ? 'Chargement...'
+                                : 'Afficher plus d’œuvres'}
+                        </button>
+                    </div>
+                )}
         </main>
     );
 }

@@ -1,96 +1,450 @@
 # MangaTrack
 
-MangaTrack est une application web permettant de suivre ses mangas et anime, gérer sa progression et programmer des rappels.
+MangaTrack est une application web permettant de suivre ses mangas et anime, gérer sa progression, découvrir de nouvelles œuvres et organiser son visionnage ou sa lecture.
 
-Ce dépôt contient le MVP du projet réalisé dans le cadre du cours d’architecture logicielle.
+Le projet a été réalisé dans le cadre du cours d’architecture logicielle en M1 à l’ESGI.
 
-## Fonctionnalités du MVP
+L’objectif est de proposer une application fonctionnelle tout en mettant en œuvre une architecture modulaire, des ports et adaptateurs, des traitements asynchrones et plusieurs scénarios de qualité.
 
-- Consultation du catalogue
-- Ajout d'une œuvre à la bibliothèque
-- Protection contre les doublons dans la bibliothèque
-- Consultation de la bibliothèque personnelle
-- Suivi de la progression
-- Persistance des données avec PostgreSQL
-- Programmation de rappels
-- Traitement asynchrone des rappels avec BullMQ et Redis
-- Simulation de l'envoi d'e-mails
-- Tests automatisés d'architecture
+---
 
-## Architecture
+## Fonctionnalités
 
-Le projet utilise une architecture de type monolithe modulaire avec une séparation inspirée des ports et adaptateurs.
+### Authentification
+
+- Création de compte
+- Connexion
+- Authentification par JWT
+- Gestion des rôles `user` et `admin`
+- Protection des routes privées
+- Gestion automatique des sessions expirées côté frontend
+
+### Catalogue
+
+- Catalogue manga et anime basé sur AniList
+- Recherche par titre
+- Pagination
+- Filtrage par type
+- Filtrage par genre
+- Fiche détaillée d’une œuvre
+- Synopsis
+- Nombre d’épisodes ou de chapitres
+- Score AniList
+- Statut
+- Format
+- Année de diffusion
+- Relations entre œuvres
+
+Le catalogue utilise l’API GraphQL publique d’AniList.
+
+### Bibliothèque personnelle
+
+Chaque utilisateur dispose de sa propre bibliothèque.
+
+Il est possible de :
+
+- ajouter une œuvre ;
+- supprimer une œuvre ;
+- modifier son statut ;
+- suivre sa progression ;
+- ajouter une œuvre aux favoris ;
+- attribuer une note sur 10 ;
+- consulter ses mangas et anime suivis.
+
+Les statuts disponibles sont :
 
 ```text
-Frontend React
-      |
-      v
-API Node.js / TypeScript
-      |
-      +---- Catalogue
-      +---- Bibliothèque
-      +---- Progression
-      +---- Notifications
-      |
-      +---- PostgreSQL
-      |
-      +---- Redis / BullMQ
-                |
-                v
-              Worker
-                |
-                v
-        Adaptateur e-mail
+À commencer
+En cours
+Terminé
+Abandonné
 ```
 
-Les dépendances techniques sont isolées derrière des ports afin de faciliter leur remplacement.
+Une même œuvre ne peut apparaître qu’une seule fois dans la bibliothèque d’un utilisateur.
+
+### Progression
+
+MangaTrack permet de suivre :
+
+- les épisodes vus pour un anime ;
+- les chapitres lus pour un manga.
+
+Le nombre total disponible est récupéré depuis AniList lorsqu’il est connu.
+
+### Relations manga / anime
+
+Les relations entre œuvres sont récupérées depuis AniList.
+
+MangaTrack peut notamment afficher :
+
+```text
+Adaptation
+Suite
+Préquelle
+Spin-off
+Histoire parallèle
+Version alternative
+Résumé
+```
+
+Les adaptations manga / anime sont mises en avant séparément.
+
+### Point de reprise anime → manga
+
+Lorsqu’un anime possède une adaptation manga, l’utilisateur peut enregistrer manuellement le chapitre à partir duquel il souhaite reprendre sa lecture.
+
+Exemple :
+
+```text
+Attack on Titan - Anime
+        ↓
+Attack on Titan - Manga
+        ↓
+Reprendre au chapitre 34
+```
+
+Le point de reprise est conservé dans PostgreSQL.
+
+La correspondance épisode → chapitre n’est pas inventée automatiquement : AniList ne fournit pas systématiquement cette information précise.
+
+### Calendrier des sorties
+
+MangaTrack récupère les prochaines sorties d’épisodes via AniList.
+
+Le calendrier indique notamment :
+
+- le titre ;
+- le numéro d’épisode ;
+- la date ;
+- l’heure ;
+- le format ;
+- l’image de couverture.
+
+Depuis le calendrier, l’utilisateur peut également créer un rappel.
+
+### Rappels
+
+Les utilisateurs peuvent programmer des rappels.
+
+Un rappel contient :
+
+```text
+Message
+Date / heure
+Statut
+```
+
+Statuts possibles :
+
+```text
+pending
+sent
+failed
+cancelled
+```
+
+Les rappels sont persistés dans PostgreSQL et planifiés avec BullMQ.
+
+Ils peuvent être annulés tant qu’ils n’ont pas encore été traités.
+
+### Traitement asynchrone
+
+Le traitement des rappels repose sur :
+
+```text
+API
+ |
+ v
+PostgreSQL
+ |
+ v
+BullMQ
+ |
+ v
+Redis
+ |
+ v
+Worker
+ |
+ v
+Adaptateur e-mail
+```
+
+Le fournisseur d’e-mail est actuellement simulé avec un `FakeEmailAdapter`.
+
+Cela permet de tester l’architecture sans dépendre d’un service d’e-mail externe.
+
+### Recommandations personnalisées
+
+MangaTrack génère des recommandations à partir de la bibliothèque de l’utilisateur.
+
+Le système analyse notamment :
+
+- les genres des œuvres suivies ;
+- les favoris ;
+- les notes attribuées ;
+- les œuvres terminées.
+
+Les favoris et les œuvres bien notées ont davantage de poids dans le calcul.
+
+Les œuvres déjà présentes dans la bibliothèque sont exclues des recommandations.
+
+### Statistiques
+
+Une page de statistiques permet de consulter :
+
+- nombre total d’œuvres suivies ;
+- nombre de favoris ;
+- nombre d’œuvres notées ;
+- note moyenne ;
+- nombre d’anime suivis ;
+- nombre d’épisodes vus ;
+- nombre de mangas suivis ;
+- nombre de chapitres lus ;
+- répartition des œuvres selon leur statut.
+
+### Plan de rattrapage
+
+MangaTrack peut calculer un rythme de visionnage ou de lecture à partir d’une date cible.
+
+L’utilisateur choisit :
+
+```text
+Une œuvre
++
+Une date cible
+```
+
+L’application calcule ensuite :
+
+- le nombre d’épisodes ou chapitres restants ;
+- le nombre de jours disponibles ;
+- le rythme quotidien nécessaire ;
+- une estimation du rythme hebdomadaire.
+
+Exemple :
+
+```text
+25 épisodes restants
+4 jours disponibles
+
+→ environ 7 épisodes par jour
+```
+
+### Administration
+
+Un utilisateur possédant le rôle `admin` peut accéder à une interface d’administration.
+
+Elle permet notamment de consulter les utilisateurs inscrits.
+
+Les mots de passe et les hash de mots de passe ne sont jamais exposés par l’API.
+
+---
+
+# Architecture
+
+MangaTrack utilise un **monolithe modulaire** avec une organisation inspirée des **ports et adaptateurs**.
+
+L’objectif est de séparer :
+
+- la logique métier ;
+- les interfaces ;
+- les intégrations externes ;
+- les technologies d’infrastructure.
+
+Architecture simplifiée :
+
+```text
+                     Frontend React
+                           |
+                           v
+                 API Node.js / Express
+                           |
+        +------------------+------------------+
+        |                  |                  |
+        v                  v                  v
+     Catalogue         Bibliothèque       Utilisateurs
+        |                  |                  |
+        |                  |                  |
+        +------------------+------------------+
+                           |
+                 Services applicatifs
+                           |
+             +-------------+-------------+
+             |                           |
+             v                           v
+          Ports                       Ports
+             |                           |
+        +----+-----+                +----+------+
+        |          |                |           |
+        v          v                v           v
+    PostgreSQL   Redis          AniList       BullMQ
+                                             |
+                                             v
+                                           Worker
+                                             |
+                                             v
+                                       Adaptateur e-mail
+```
+
+---
+
+## Ports et adaptateurs
+
+Les modules métier ne connaissent pas directement les technologies utilisées.
 
 Exemples :
 
 ```text
 CatalogPort
-    |
-FakeCatalogAdapter
-
-NotificationQueuePort
-    |
-BullMqNotificationQueueAdapter
-
-EmailPort
-    |
-FakeEmailAdapter
+   |
+   +-- AniListCatalogAdapter
+   |
+   +-- FakeCatalogAdapter
 ```
 
-## Technologies
+```text
+LibraryRepository
+   |
+   +-- PostgresLibraryRepository
+```
 
-### Frontend
+```text
+NotificationQueuePort
+   |
+   +-- BullMqNotificationQueueAdapter
+```
+
+```text
+EmailPort
+   |
+   +-- FakeEmailAdapter
+```
+
+Cette organisation facilite le remplacement d’une technologie sans modifier la logique métier.
+
+---
+
+# Cache du catalogue
+
+Redis est également utilisé comme cache pour le catalogue AniList.
+
+Le principe est :
+
+```text
+Frontend
+   |
+   v
+Backend
+   |
+   v
+Cache Redis
+   |
+   +---- donnée récente → utilisée directement
+   |
+   +---- donnée absente → appel AniList
+                          |
+                          v
+                       cache Redis
+```
+
+Une donnée plus ancienne peut également être conservée temporairement afin de disposer d’un fallback en cas d’indisponibilité d’AniList.
+
+---
+
+# Technologies
+
+## Frontend
 
 - React
 - TypeScript
+- React Router
 - Vite
+- CSS
 
-### Backend
+## Backend
 
 - Node.js
 - TypeScript
 - Express
+- Zod
 
-### Infrastructure
+## Sécurité
+
+- JWT
+- bcrypt
+
+## Infrastructure
 
 - PostgreSQL
 - Redis
 - BullMQ
 - Docker Compose
 
-## Prérequis
+## Service externe
 
-Avant de lancer le projet :
+- AniList GraphQL API
 
-- Node.js et npm
+---
+
+# Structure du projet
+
+```text
+MangaTrack/
+├── backend/
+│   ├── src/
+│   │   ├── config/
+│   │   ├── infrastructure/
+│   │   │   ├── database/
+│   │   │   ├── queue/
+│   │   │   └── redis/
+│   │   │
+│   │   ├── integrations/
+│   │   │   ├── catalog/
+│   │   │   ├── email/
+│   │   │   └── security/
+│   │   │
+│   │   ├── modules/
+│   │   │   ├── catalog/
+│   │   │   ├── library/
+│   │   │   ├── notifications/
+│   │   │   ├── progress/
+│   │   │   ├── reminders/
+│   │   │   └── users/
+│   │   │
+│   │   ├── workers/
+│   │   └── server.ts
+│   │
+│   └── test/
+│
+├── frontend/
+│   └── src/
+│       ├── api/
+│       ├── auth/
+│       ├── pages/
+│       ├── types/
+│       ├── App.tsx
+│       └── App.css
+│
+├── docs/
+├── docker-compose.yml
+└── README.md
+```
+
+---
+
+# Prérequis
+
+Pour lancer MangaTrack :
+
+- Node.js
+- npm
 - Docker
 - Docker Compose
 
-## Installation
+---
+
+# Installation
 
 Cloner le dépôt :
 
@@ -99,21 +453,7 @@ git clone git@github.com:AlexTng44000/MangaTrack.git
 cd MangaTrack
 ```
 
-### Configuration du backend
-
-Créer le fichier d'environnement :
-
-```bash
-cp backend/.env.example backend/.env
-```
-
-Le fichier peut contenir :
-
-```env
-DATABASE_URL=postgresql://mangatrack:mangatrack_dev@localhost:5432/mangatrack
-```
-
-Installer les dépendances :
+Installer les dépendances du backend :
 
 ```bash
 cd backend
@@ -121,21 +461,7 @@ npm install
 cd ..
 ```
 
-### Configuration du frontend
-
-Créer le fichier d'environnement :
-
-```bash
-cp frontend/.env.example frontend/.env
-```
-
-Le fichier peut contenir :
-
-```env
-VITE_API_URL=http://localhost:3000
-```
-
-Installer les dépendances :
+Installer les dépendances du frontend :
 
 ```bash
 cd frontend
@@ -143,39 +469,77 @@ npm install
 cd ..
 ```
 
-## Lancement du MVP
+---
 
-### 1. Démarrer PostgreSQL et Redis
+# Configuration
 
-Depuis la racine du projet :
+## Backend
+
+Créer le fichier d’environnement si nécessaire :
+
+```bash
+cp backend/.env.example backend/.env
+```
+
+Exemple de connexion PostgreSQL :
+
+```env
+DATABASE_URL=postgresql://mangatrack:mangatrack_dev@localhost:5432/mangatrack
+```
+
+Le backend utilise également l’URL de l’API AniList configurée dans l’environnement.
+
+## Frontend
+
+Créer le fichier :
+
+```bash
+cp frontend/.env.example frontend/.env
+```
+
+Exemple :
+
+```env
+VITE_API_URL=http://localhost:3000
+```
+
+---
+
+# Lancement
+
+## 1. PostgreSQL et Redis
+
+Depuis la racine :
 
 ```bash
 docker compose up -d
 ```
 
-Vérifier leur état :
+Vérifier :
 
 ```bash
 docker compose ps
 ```
 
-Les conteneurs suivants doivent être actifs :
+Les services suivants doivent notamment être actifs :
 
 ```text
 mangatrack-postgres
 mangatrack-redis
 ```
 
-### 2. Démarrer l'API
+---
 
-Dans un premier terminal :
+## 2. Backend
+
+Dans un terminal :
 
 ```bash
 cd backend
 npm run dev
 ```
 
-L'API est disponible sur :
+L’API démarre sur :
 
 ```text
 http://localhost:3000
@@ -196,7 +560,9 @@ Réponse attendue :
 }
 ```
 
-### 3. Démarrer le worker de notifications
+---
+
+## 3. Worker de notifications
 
 Dans un deuxième terminal :
 
@@ -205,13 +571,11 @@ cd backend
 npm run worker:notifications
 ```
 
-Le terminal doit afficher :
+Le worker traite les rappels planifiés avec BullMQ.
 
-```text
-Worker notifications démarré
-```
+---
 
-### 4. Démarrer le frontend
+## 4. Frontend
 
 Dans un troisième terminal :
 
@@ -220,106 +584,182 @@ cd frontend
 npm run dev
 ```
 
-L'application est accessible sur :
+L’application est ensuite disponible sur :
 
 ```text
 http://localhost:5173
 ```
 
-## Utilisation
+---
 
-Depuis l'interface web, il est possible de :
+# API principale
 
-```text
-Catalogue
-   |
-   v
-Ajouter une œuvre
-   |
-   v
-Ma bibliothèque
-   |
-   v
-Modifier la progression
-```
-
-L'onglet `Rappels` permet également de programmer une notification à une date et une heure futures.
-
-Le traitement fonctionne ainsi :
-
-```text
-Frontend
-   |
-POST /notifications
-   |
-   v
-BullMQ
-   |
-   v
-Redis
-   |
-attente
-   |
-   v
-Worker
-   |
-   v
-E-mail simulé
-```
-
-Exemple dans le terminal du worker :
-
-```text
-[EMAIL SIMULÉ] À test@mangatrack.local
-Le prochain épisode sort bientôt.
-Notification 6 envoyée
-```
-
-## API principale
-
-### Santé de l'application
+## Santé
 
 ```http
 GET /health
 ```
 
-### Catalogue
+---
+
+## Authentification
+
+Inscription :
+
+```http
+POST /auth/register
+```
+
+Connexion :
+
+```http
+POST /auth/login
+```
+
+Utilisateur courant :
+
+```http
+GET /auth/me
+Authorization: Bearer <token>
+```
+
+---
+
+## Catalogue
+
+Catalogue :
 
 ```http
 GET /catalog
 ```
 
-### Bibliothèque
+Recherche et filtres :
 
 ```http
-GET /library
+GET /catalog?search=attack&type=anime&genre=Action&page=1
 ```
 
-Ajouter une œuvre :
+Récupération de plusieurs œuvres :
 
 ```http
-POST /library
+GET /catalog/by-ids?ids=16498,53390
+```
+
+Calendrier :
+
+```http
+GET /catalog/calendar
+```
+
+Fiche détaillée :
+
+```http
+GET /catalog/:id
 ```
 
 Exemple :
 
+```http
+GET /catalog/16498
+```
+
+---
+
+## Bibliothèque
+
+Toutes les routes de bibliothèque nécessitent un JWT.
+
+Liste :
+
+```http
+GET /library
+Authorization: Bearer <token>
+```
+
+Ajout :
+
+```http
+POST /library
+Authorization: Bearer <token>
+Content-Type: application/json
+```
+
 ```json
 {
-  "userId": 1,
-  "catalogItemId": 1,
+  "catalogItemId": 16498,
   "status": "a_commencer"
 }
 ```
 
-Une œuvre ne peut être ajoutée qu'une seule fois par utilisateur.
+Le `userId` n’est jamais fourni par le client : il est récupéré depuis le JWT.
 
-Une tentative de doublon renvoie :
+Suppression :
 
 ```http
-409 Conflict
+DELETE /library/:id
 ```
 
-### Progression
+Statut :
+
+```http
+PATCH /library/:id/status
+```
+
+```json
+{
+  "status": "en_cours"
+}
+```
+
+Favori :
+
+```http
+PATCH /library/:id/favorite
+```
+
+```json
+{
+  "isFavorite": true
+}
+```
+
+Note :
+
+```http
+PATCH /library/:id/rating
+```
+
+```json
+{
+  "rating": 8
+}
+```
+
+Point de reprise :
+
+```http
+PATCH /library/:id/resume
+```
+
+```json
+{
+  "resumeCatalogItemId": 53390,
+  "resumeChapter": 34
+}
+```
+
+Pour supprimer le point de reprise :
+
+```json
+{
+  "resumeCatalogItemId": null,
+  "resumeChapter": null
+}
+```
+
+---
+
+## Progression
 
 ```http
 PATCH /progress/:libraryEntryId
@@ -329,30 +769,108 @@ Exemple :
 
 ```json
 {
-  "progress": 5
+  "progress": 12
 }
 ```
 
-### Notifications
+---
+
+## Rappels
+
+Liste :
 
 ```http
-POST /notifications
+GET /reminders
+```
+
+Création :
+
+```http
+POST /reminders
 ```
 
 Exemple :
 
 ```json
 {
-  "userId": 1,
-  "email": "test@mangatrack.local",
-  "message": "Le prochain épisode sort bientôt.",
-  "scheduledAt": "2026-10-10T15:30:00+02:00"
+  "message": "Nouvel épisode disponible",
+  "scheduledAt": "2026-10-20T18:00:00+02:00"
 }
 ```
 
-## Tests
+Annulation :
 
-### Backend
+```http
+DELETE /reminders/:id
+```
+
+Les rappels sont liés automatiquement à l’utilisateur authentifié.
+
+---
+
+## Administration
+
+```http
+GET /admin/users
+Authorization: Bearer <token-admin>
+```
+
+Un utilisateur non administrateur reçoit :
+
+```http
+403 Forbidden
+```
+
+---
+
+# Sécurité
+
+MangaTrack applique plusieurs mécanismes de sécurité.
+
+## Mots de passe
+
+Les mots de passe sont hashés avec bcrypt avant leur stockage.
+
+Le mot de passe et son hash ne sont jamais renvoyés par l’API.
+
+## JWT
+
+Les JWT contiennent uniquement les informations nécessaires :
+
+```text
+userId
+role
+```
+
+## Isolation utilisateur
+
+Les opérations sensibles utilisent toujours l’utilisateur issu du JWT.
+
+Par exemple :
+
+```text
+id de l’entrée
++
+userId issu du JWT
+```
+
+Cela empêche un utilisateur de modifier directement une entrée appartenant à un autre compte.
+
+## Administration
+
+L’accès à l’administration nécessite :
+
+```text
+JWT valide
++
+role = admin
+```
+
+---
+
+# Tests
+
+## Backend
 
 Depuis `backend/` :
 
@@ -361,9 +879,30 @@ npm run typecheck
 npm test
 ```
 
-Les tests vérifient notamment que les modules métier ne dépendent pas directement de l'infrastructure ou des technologies comme BullMQ, Redis ou PostgreSQL.
+Les tests couvrent notamment :
 
-### Frontend
+- respect des frontières architecturales ;
+- absence de dépendances techniques directes dans les modules métier ;
+- gestion du point de reprise ;
+- validation des erreurs métier ;
+- transmission du `userId` ;
+- authentification requise ;
+- JWT invalide ;
+- JWT valide ;
+- accès administrateur ;
+- refus d’un utilisateur non administrateur.
+
+À l’état actuel du projet :
+
+```text
+18 tests
+18 réussis
+0 échec
+```
+
+---
+
+## Frontend
 
 Depuis `frontend/` :
 
@@ -372,66 +911,95 @@ npm run lint
 npm run build
 ```
 
-## Test du scénario de disponibilité des notifications
+Ces commandes permettent notamment de vérifier :
 
-Le système de notifications permet de conserver les rappels lorsqu'aucun worker n'est disponible.
+- ESLint ;
+- TypeScript ;
+- compilation React ;
+- build Vite de production.
 
-Pour le vérifier :
+---
 
-1. Arrêter le worker.
-2. Créer une notification avec l'API ou le frontend.
-3. La notification reste stockée dans Redis.
-4. Relancer le worker.
-5. Le rappel est automatiquement traité.
+# Scénario de résilience des rappels
 
-Cela permet de démontrer qu'une indisponibilité temporaire du worker ne provoque pas la perte du rappel.
+BullMQ permet de dissocier la création d’un rappel de son traitement.
 
-## Structure simplifiée
-
-```text
-MangaTrack/
-├── backend/
-│   ├── src/
-│   │   ├── infrastructure/
-│   │   ├── integrations/
-│   │   ├── modules/
-│   │   ├── workers/
-│   │   └── server.ts
-│   └── test/
-│
-├── frontend/
-│   └── src/
-│       ├── api/
-│       ├── pages/
-│       └── types/
-│
-├── docs/
-├── docker-compose.yml
-└── README.md
-```
-
-## État du MVP
-
-La tranche fonctionnelle actuelle permet de réaliser le parcours suivant :
+Exemple :
 
 ```text
-Consulter le catalogue
-        ↓
-Ajouter une œuvre
-        ↓
-Stockage PostgreSQL
-        ↓
-Consulter sa bibliothèque
-        ↓
-Modifier sa progression
-        ↓
-Programmer un rappel
-        ↓
-Stockage Redis / BullMQ
-        ↓
-Traitement par le worker
-        ↓
-Envoi simulé de la notification
+1. Le worker est arrêté.
+2. L’utilisateur programme un rappel.
+3. Le rappel est persisté.
+4. Le job reste en attente dans Redis / BullMQ.
+5. Le worker est redémarré.
+6. Le rappel est traité.
 ```
 
-Les services externes réels, notamment le fournisseur de catalogue et le fournisseur d'e-mails, sont actuellement remplacés par des adaptateurs simulés.
+Une indisponibilité temporaire du worker ne provoque donc pas la perte immédiate du rappel.
+
+---
+
+# Scénario de résilience du catalogue
+
+Le catalogue est protégé par un cache Redis.
+
+Le principe est :
+
+```text
+AniList disponible
+      |
+      v
+récupération des données
+      |
+      v
+cache Redis
+```
+
+En cas de problème temporaire avec AniList, une donnée précédemment mise en cache peut être utilisée comme fallback.
+
+Cela limite l’impact d’une indisponibilité du fournisseur externe.
+
+---
+
+# État actuel
+
+MangaTrack permet actuellement de réaliser le parcours suivant :
+
+```text
+Créer un compte
+      ↓
+Se connecter
+      ↓
+Parcourir AniList
+      ↓
+Ajouter des œuvres à sa bibliothèque
+      ↓
+Gérer statut / progression / favoris / notes
+      ↓
+Consulter les sorties à venir
+      ↓
+Programmer des rappels
+      ↓
+Obtenir des recommandations
+      ↓
+Consulter ses statistiques
+      ↓
+Voir les relations manga / anime
+      ↓
+Enregistrer un point de reprise manga
+      ↓
+Créer un plan de rattrapage
+```
+
+Le projet met ainsi en œuvre à la fois des fonctionnalités utilisateur et plusieurs principes d’architecture logicielle :
+
+- monolithe modulaire ;
+- ports et adaptateurs ;
+- isolation de l’infrastructure ;
+- persistance PostgreSQL ;
+- cache Redis ;
+- traitement asynchrone BullMQ ;
+- API externe AniList ;
+- authentification JWT ;
+- contrôle des rôles ;
+- tests automatisés.

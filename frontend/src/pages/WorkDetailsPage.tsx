@@ -90,6 +90,50 @@ function isMangaAnimeRelation(
     );
 }
 
+function isSafeExternalUrl(
+    value: string,
+): boolean {
+    try {
+        const url =
+            new URL(value);
+
+        return (
+            url.protocol ===
+            'https:' ||
+            url.protocol ===
+            'http:'
+        );
+    } catch {
+        return false;
+    }
+}
+
+
+function getMediaStatusLabel(
+    status: string | null,
+): string {
+    switch (status) {
+        case 'FINISHED':
+            return 'Terminé';
+
+        case 'RELEASING':
+            return 'En cours';
+
+        case 'NOT_YET_RELEASED':
+            return 'À venir';
+
+        case 'CANCELLED':
+            return 'Annulé';
+
+        case 'HIATUS':
+            return 'En pause';
+
+        default:
+            return status ??
+                'Inconnu';
+    }
+}
+
 export function WorkDetailsPage() {
     const { id } =
         useParams();
@@ -164,6 +208,12 @@ export function WorkDetailsPage() {
             null,
         );
 
+    const [
+        showAllStreamingEpisodes,
+        setShowAllStreamingEpisodes,
+    ] =
+        useState(false);
+
     useEffect(() => {
         if (invalidWorkId) {
             return;
@@ -215,6 +265,10 @@ export function WorkDetailsPage() {
 
                     setResumeError(
                         null,
+                    );
+
+                    setShowAllStreamingEpisodes(
+                        false,
                     );
 
                     if (
@@ -474,6 +528,58 @@ export function WorkDetailsPage() {
                 ),
         );
 
+    const externalLinks =
+        currentWork.externalLinks ??
+        [];
+
+    const streamingEpisodes =
+        currentWork.streamingEpisodes ??
+        [];
+
+    const platformLinks =
+        Array.from(
+            new Map(
+                externalLinks
+                    .filter(
+                        (link) =>
+                            !link.isDisabled &&
+                            link.type ===
+                            'STREAMING' &&
+                            isSafeExternalUrl(
+                                link.url,
+                            ),
+                    )
+                    .map(
+                        (link) => [
+                            link.url,
+                            link,
+                        ],
+                    ),
+            ).values(),
+        );
+
+    const safeStreamingEpisodes =
+        streamingEpisodes.filter(
+            (episode) =>
+                isSafeExternalUrl(
+                    episode.url,
+                ),
+        );
+
+    const visibleStreamingEpisodes =
+        showAllStreamingEpisodes
+            ? safeStreamingEpisodes
+            : safeStreamingEpisodes.slice(
+                0,
+                12,
+            );
+
+    const hasViewingOptions =
+        platformLinks.length >
+        0 ||
+        safeStreamingEpisodes.length >
+        0;
+
     function renderRelation(
         relation:
             CatalogRelation,
@@ -675,36 +781,118 @@ export function WorkDetailsPage() {
         );
     }
 
+    const progressPercent =
+        libraryEntry &&
+            currentWork.total != null &&
+            currentWork.total > 0
+            ? Math.min(
+                100,
+                Math.round(
+                    (
+                        libraryEntry.progress /
+                        currentWork.total
+                    ) *
+                    100,
+                ),
+            )
+            : null;
+
     return (
         <main className="work-details">
-            <button
-                type="button"
-                onClick={() =>
-                    navigate(-1)
-                }
-            >
-                ← Retour
-            </button>
+            <div className="work-details-toolbar">
+                <button
+                    type="button"
+                    className="back-button"
+                    onClick={() =>
+                        navigate(-1)
+                    }
+                >
+                    ← Retour
+                </button>
 
-            <div className="work-details-content">
-                {currentWork.imageUrl && (
-                    <img
-                        src={
-                            currentWork.imageUrl
-                        }
-                        alt={
-                            currentWork.title
-                        }
-                        className="work-cover"
-                    />
-                )}
-
-                <div>
-                    <span className="media-type">
-                        {
-                            currentWork.type
-                        }
+                {libraryEntry && (
+                    <span className="library-presence">
+                        ✓ Dans ma bibliothèque
                     </span>
+                )}
+            </div>
+
+            <section className="work-hero">
+                <div className="work-poster-column">
+                    {currentWork.imageUrl ? (
+                        <img
+                            src={
+                                currentWork.imageUrl
+                            }
+                            alt={
+                                currentWork.title
+                            }
+                            className="work-cover"
+                        />
+                    ) : (
+                        <div className="work-cover-placeholder">
+                            Aucune image
+                        </div>
+                    )}
+
+                    {libraryEntry && (
+                        <div className="work-library-progress">
+                            <div className="work-library-progress-heading">
+                                <span>
+                                    Ma progression
+                                </span>
+
+                                <strong>
+                                    {
+                                        libraryEntry.progress
+                                    }
+
+                                    {currentWork.total !=
+                                        null &&
+                                        ` / ${currentWork.total}`}
+                                </strong>
+                            </div>
+
+                            {progressPercent !==
+                                null && (
+                                    <>
+                                        <div className="work-library-progress-track">
+                                            <div
+                                                className="work-library-progress-fill"
+                                                style={{
+                                                    width: `${progressPercent}%`,
+                                                }}
+                                            />
+                                        </div>
+
+                                        <small>
+                                            {
+                                                progressPercent
+                                            }
+                                            % terminé
+                                        </small>
+                                    </>
+                                )}
+                        </div>
+                    )}
+                </div>
+
+                <div className="work-hero-content">
+                    <div className="work-heading-meta">
+                        <span className="media-type">
+                            {
+                                currentWork.type
+                            }
+                        </span>
+
+                        {currentWork.seasonYear && (
+                            <span className="work-year">
+                                {
+                                    currentWork.seasonYear
+                                }
+                            </span>
+                        )}
+                    </div>
 
                     <h2>
                         {
@@ -712,70 +900,265 @@ export function WorkDetailsPage() {
                         }
                     </h2>
 
-                    <p>
-                        {currentWork.genres.join(
-                            ' • ',
+                    {currentWork.genres.length >
+                        0 && (
+                            <div className="work-genres">
+                                {currentWork.genres.map(
+                                    (genre) => (
+                                        <span
+                                            key={genre}
+                                        >
+                                            {genre}
+                                        </span>
+                                    ),
+                                )}
+                            </div>
                         )}
-                    </p>
 
-                    <p>
-                        {currentWork.type ===
-                            'anime'
-                            ? 'Épisodes'
-                            : 'Chapitres'}
-                        {' : '}
-                        {currentWork.total ??
-                            'Inconnu'}
-                    </p>
+                    <div className="work-meta-grid">
+                        <article className="work-meta-card">
+                            <span>
+                                {currentWork.type ===
+                                    'anime'
+                                    ? 'Épisodes'
+                                    : 'Chapitres'}
+                            </span>
 
-                    {currentWork.seasonYear && (
-                        <p>
-                            Année :{' '}
-                            {
-                                currentWork.seasonYear
-                            }
+                            <strong>
+                                {currentWork.total ??
+                                    '—'}
+                            </strong>
+                        </article>
+
+                        <article className="work-meta-card">
+                            <span>
+                                Format
+                            </span>
+
+                            <strong>
+                                {currentWork.format ??
+                                    '—'}
+                            </strong>
+                        </article>
+
+                        <article className="work-meta-card">
+                            <span>
+                                Statut
+                            </span>
+
+                            <strong>
+                                {getMediaStatusLabel(
+                                    currentWork.status,
+                                )}
+                            </strong>
+                        </article>
+
+                        <article className="work-meta-card">
+                            <span>
+                                Score AniList
+                            </span>
+
+                            <strong>
+                                {currentWork.averageScore !==
+                                    null
+                                    ? `${currentWork.averageScore}/100`
+                                    : '—'}
+                            </strong>
+                        </article>
+                    </div>
+
+                    <section className="work-synopsis">
+                        <span className="page-eyebrow">
+                            À propos
+                        </span>
+
+                        <h3>
+                            Synopsis
+                        </h3>
+
+                        <p className="work-description">
+                            {description ??
+                                'Aucun synopsis disponible.'}
                         </p>
-                    )}
+                    </section>
+                </div>
+            </section>
 
-                    {currentWork.format && (
-                        <p>
-                            Format :{' '}
-                            {
-                                currentWork.format
-                            }
-                        </p>
-                    )}
-
-                    {currentWork.status && (
-                        <p>
-                            Statut :{' '}
-                            {
-                                currentWork.status
-                            }
-                        </p>
-                    )}
-
-                    {currentWork.averageScore !==
-                        null && (
-                            <p>
-                                Score AniList :{' '}
-                                {
-                                    currentWork.averageScore
-                                }
-                                /100
-                            </p>
-                        )}
+            <section className="watch-section">
+                <div className="section-heading">
+                    <span className="page-eyebrow">
+                        Disponibilité
+                    </span>
 
                     <h3>
-                        Synopsis
+                        {currentWork.type ===
+                            'anime'
+                            ? 'Où regarder ?'
+                            : 'Où lire ?'}
                     </h3>
 
-                    <p className="work-description">
-                        {description ??
-                            'Aucun synopsis disponible.'}
+                    <p>
+                        Liens externes référencés par
+                        AniList pour cette œuvre.
                     </p>
                 </div>
-            </div>
+
+                {platformLinks.length >
+                    0 && (
+                        <div className="platform-links">
+                            {platformLinks.map(
+                                (link) => (
+                                    <a
+                                        key={link.url}
+                                        href={link.url}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        className="platform-link"
+                                    >
+                                        {link.icon && (
+                                            <img
+                                                src={
+                                                    link.icon
+                                                }
+                                                alt=""
+                                                className="platform-icon"
+                                            />
+                                        )}
+
+                                        <span>
+                                            {link.site}
+                                        </span>
+
+                                        <strong>
+                                            {currentWork.type ===
+                                                'anime'
+                                                ? 'Regarder ↗'
+                                                : 'Lire ↗'}
+                                        </strong>
+                                    </a>
+                                ),
+                            )}
+                        </div>
+                    )}
+
+                {currentWork.type ===
+                    'anime' &&
+                    safeStreamingEpisodes
+                        .length >
+                    0 && (
+                        <div className="streaming-episodes">
+                            <div className="streaming-heading">
+                                <div>
+                                    <h4>
+                                        Épisodes disponibles
+                                    </h4>
+
+                                    <p>
+                                        Accès direct aux
+                                        épisodes référencés
+                                        par AniList.
+                                    </p>
+                                </div>
+
+                                <span>
+                                    {
+                                        safeStreamingEpisodes.length
+                                    }{' '}
+                                    épisode
+                                    {safeStreamingEpisodes.length >
+                                        1
+                                        ? 's'
+                                        : ''}
+                                </span>
+                            </div>
+
+                            <div className="streaming-grid">
+                                {visibleStreamingEpisodes.map(
+                                    (
+                                        episode,
+                                        index,
+                                    ) => (
+                                        <a
+                                            key={`${episode.url}-${index}`}
+                                            href={
+                                                episode.url
+                                            }
+                                            target="_blank"
+                                            rel="noreferrer"
+                                            className="streaming-card"
+                                        >
+                                            {episode.thumbnail && (
+                                                <img
+                                                    src={
+                                                        episode.thumbnail
+                                                    }
+                                                    alt=""
+                                                    className="streaming-thumbnail"
+                                                />
+                                            )}
+
+                                            <span>
+                                                {episode.title ||
+                                                    `Épisode ${index + 1}`}
+                                            </span>
+
+                                            <small>
+                                                {episode.site}
+                                            </small>
+                                        </a>
+                                    ),
+                                )}
+                            </div>
+
+                            {safeStreamingEpisodes
+                                .length >
+                                12 && (
+                                    <button
+                                        type="button"
+                                        className="streaming-toggle"
+                                        onClick={() =>
+                                            setShowAllStreamingEpisodes(
+                                                (
+                                                    current,
+                                                ) =>
+                                                    !current,
+                                            )
+                                        }
+                                    >
+                                        {showAllStreamingEpisodes
+                                            ? 'Afficher moins'
+                                            : `Afficher les ${safeStreamingEpisodes.length} épisodes`}
+                                    </button>
+                                )}
+                        </div>
+                    )}
+
+                {!hasViewingOptions && (
+                    <div className="watch-empty">
+                        <strong>
+                            Aucune plateforme renseignée
+                        </strong>
+
+                        <p>
+                            AniList ne référence
+                            actuellement aucune
+                            plateforme de{' '}
+                            {currentWork.type ===
+                                'anime'
+                                ? 'visionnage'
+                                : 'lecture'}{' '}
+                            pour cette œuvre.
+                        </p>
+                    </div>
+                )}
+
+                <p className="watch-disclaimer">
+                    MangaTrack n’héberge aucun
+                    contenu : les liens ouvrent
+                    les plateformes externes
+                    référencées par AniList.
+                </p>
+            </section>
 
             {resumeMessage && (
                 <p className="success-message">
@@ -796,14 +1179,22 @@ export function WorkDetailsPage() {
             {mangaAnimeRelations.length >
                 0 && (
                     <section className="relations-section">
-                        <h3>
-                            Adaptation manga / anime
-                        </h3>
+                        <div className="section-heading">
+                            <span className="page-eyebrow">
+                                Continuer l’histoire
+                            </span>
 
-                        <p>
-                            Cette œuvre possède une
-                            adaptation directement liée.
-                        </p>
+                            <h3>
+                                Adaptation manga / anime
+                            </h3>
+
+                            <p>
+                                Passe facilement d’un
+                                support à l’autre et
+                                conserve ton point de
+                                reprise.
+                            </p>
+                        </div>
 
                         <div className="relations-grid">
                             {mangaAnimeRelations.map(
@@ -822,9 +1213,21 @@ export function WorkDetailsPage() {
             {otherRelations.length >
                 0 && (
                     <section className="relations-section">
-                        <h3>
-                            Œuvres liées
-                        </h3>
+                        <div className="section-heading">
+                            <span className="page-eyebrow">
+                                Univers
+                            </span>
+
+                            <h3>
+                                Œuvres liées
+                            </h3>
+
+                            <p>
+                                Suites, préquelles,
+                                spin-off et autres
+                                œuvres associées.
+                            </p>
+                        </div>
 
                         <div className="relations-grid">
                             {otherRelations.map(
@@ -842,14 +1245,20 @@ export function WorkDetailsPage() {
             {currentWork.relations.length ===
                 0 && (
                     <section className="relations-section">
-                        <h3>
-                            Œuvres liées
-                        </h3>
+                        <div className="section-heading">
+                            <span className="page-eyebrow">
+                                Univers
+                            </span>
 
-                        <p>
+                            <h3>
+                                Œuvres liées
+                            </h3>
+                        </div>
+
+                        <div className="relations-empty">
                             Aucune œuvre liée
-                            disponible.
-                        </p>
+                            disponible pour le moment.
+                        </div>
                     </section>
                 )}
         </main>

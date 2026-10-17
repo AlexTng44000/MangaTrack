@@ -22,6 +22,47 @@ interface CatchUpWork {
     catalog: CatalogItem;
 }
 
+function getTodayInputValue(): string {
+    const today =
+        new Date();
+
+    const year =
+        today.getFullYear();
+
+    const month =
+        String(
+            today.getMonth() + 1,
+        ).padStart(
+            2,
+            '0',
+        );
+
+    const day =
+        String(
+            today.getDate(),
+        ).padStart(
+            2,
+            '0',
+        );
+
+    return `${year}-${month}-${day}`;
+}
+
+function getMediaUnit(
+    type: CatalogItem['type'],
+    plural = false,
+): string {
+    if (type === 'anime') {
+        return plural
+            ? 'épisodes'
+            : 'épisode';
+    }
+
+    return plural
+        ? 'chapitres'
+        : 'chapitre';
+}
+
 export function CatchUpPage() {
     const [
         works,
@@ -253,23 +294,42 @@ export function CatchUpPage() {
                         days,
                     );
 
-            const perWeek =
+            const weeklyEquivalent =
                 remaining === 0
                     ? 0
-                    : Math.ceil(
-                        (
-                            remaining /
-                            days
-                        ) *
-                        7,
+                    : Math.min(
+                        remaining,
+                        Math.ceil(
+                            (
+                                remaining /
+                                days
+                            ) *
+                            7,
+                        ),
                     );
+
+            const progressPercent =
+                total > 0
+                    ? Math.min(
+                        100,
+                        Math.round(
+                            (
+                                selectedWork.entry
+                                    .progress /
+                                total
+                            ) *
+                            100,
+                        ),
+                    )
+                    : 0;
 
             return {
                 total,
                 remaining,
                 days,
                 perDay,
-                perWeek,
+                weeklyEquivalent,
+                progressPercent,
             };
         }, [
             selectedWork,
@@ -278,29 +338,62 @@ export function CatchUpPage() {
 
     if (loading) {
         return (
-            <main>
-                <h2>
-                    Plan de rattrapage
-                </h2>
+            <main className="catch-up-page">
+                <section className="catch-up-heading">
+                    <div>
+                        <span className="page-eyebrow">
+                            Objectif
+                        </span>
 
-                <p>
-                    Chargement de ta bibliothèque...
-                </p>
+                        <h2>
+                            Plan de rattrapage
+                        </h2>
+
+                        <p>
+                            Chargement de ta bibliothèque...
+                        </p>
+                    </div>
+                </section>
             </main>
         );
     }
 
     return (
-        <main>
-            <h2>
-                Plan de rattrapage
-            </h2>
+        <main className="catch-up-page">
+            <section className="catch-up-heading">
+                <div>
+                    <span className="page-eyebrow">
+                        Objectif
+                    </span>
 
-            <p>
-                Choisis une œuvre et une date cible.
-                MangaTrack calcule le rythme à suivre
-                pour arriver à jour.
-            </p>
+                    <h2>
+                        Plan de rattrapage
+                    </h2>
+
+                    <p>
+                        Choisis une œuvre et une date
+                        cible. MangaTrack calcule le
+                        rythme à suivre pour arriver
+                        à jour sans faire les calculs
+                        toi-même.
+                    </p>
+                </div>
+
+                <div className="catch-up-library-count">
+                    <strong>
+                        {
+                            works.length
+                        }
+                    </strong>
+
+                    <span>
+                        œuvre
+                        {works.length > 1
+                            ? 's disponibles'
+                            : ' disponible'}
+                    </span>
+                </div>
+            </section>
 
             {error && (
                 <p className="error-message">
@@ -309,121 +402,202 @@ export function CatchUpPage() {
             )}
 
             {works.length === 0 ? (
-                <p>
-                    Ta bibliothèque est vide.
-                    Ajoute d’abord une œuvre au catalogue.
-                </p>
+                <section className="catch-up-empty">
+                    <span>
+                        Aucun contenu
+                    </span>
+
+                    <h3>
+                        Ta bibliothèque est vide
+                    </h3>
+
+                    <p>
+                        Ajoute d’abord une œuvre
+                        depuis le catalogue pour
+                        créer un plan de rattrapage.
+                    </p>
+                </section>
             ) : (
-                <section className="catch-up-form">
-                    <label>
-                        Œuvre
+                <section className="catch-up-form-card">
+                    <div className="catch-up-form-copy">
+                        <span className="page-eyebrow">
+                            Paramètres
+                        </span>
 
-                        <select
-                            value={
-                                selectedEntryId
-                            }
-                            onChange={(
-                                event,
-                            ) =>
-                                setSelectedEntryId(
-                                    event.target
-                                        .value,
-                                )
-                            }
-                        >
-                            <option value="">
-                                Choisir une œuvre
-                            </option>
+                        <h3>
+                            Prépare ton objectif
+                        </h3>
 
-                            {works.map(
-                                (work) => (
-                                    <option
-                                        key={
-                                            work.entry
-                                                .id
-                                        }
-                                        value={
-                                            work.entry
-                                                .id
-                                        }
-                                    >
-                                        {
-                                            work.catalog
-                                                .title
-                                        }
-                                        {' - '}
-                                        {work.catalog
-                                            .type ===
-                                            'anime'
-                                            ? 'Anime'
-                                            : 'Manga'}
-                                    </option>
-                                ),
-                            )}
-                        </select>
-                    </label>
+                        <p>
+                            Sélectionne une œuvre
+                            puis indique la date à
+                            laquelle tu souhaites
+                            être à jour.
+                        </p>
+                    </div>
 
-                    <label>
-                        Date cible
+                    <div className="catch-up-form">
+                        <label>
+                            <span>
+                                Œuvre
+                            </span>
 
-                        <input
-                            type="date"
-                            value={
-                                targetDate
-                            }
-                            onChange={(
-                                event,
-                            ) =>
-                                setTargetDate(
-                                    event.target
-                                        .value,
-                                )
-                            }
-                        />
-                    </label>
+                            <select
+                                value={
+                                    selectedEntryId
+                                }
+                                onChange={(
+                                    event,
+                                ) =>
+                                    setSelectedEntryId(
+                                        event
+                                            .target
+                                            .value,
+                                    )
+                                }
+                            >
+                                <option value="">
+                                    Choisir une œuvre
+                                </option>
+
+                                {works.map(
+                                    (work) => (
+                                        <option
+                                            key={
+                                                work.entry
+                                                    .id
+                                            }
+                                            value={
+                                                work.entry
+                                                    .id
+                                            }
+                                        >
+                                            {
+                                                work.catalog
+                                                    .title
+                                            }
+                                            {' — '}
+                                            {work.catalog
+                                                .type ===
+                                                'anime'
+                                                ? 'Anime'
+                                                : 'Manga'}
+                                        </option>
+                                    ),
+                                )}
+                            </select>
+                        </label>
+
+                        <label>
+                            <span>
+                                Date cible
+                            </span>
+
+                            <input
+                                type="date"
+                                min={
+                                    getTodayInputValue()
+                                }
+                                value={
+                                    targetDate
+                                }
+                                onChange={(
+                                    event,
+                                ) =>
+                                    setTargetDate(
+                                        event
+                                            .target
+                                            .value,
+                                    )
+                                }
+                            />
+                        </label>
+                    </div>
                 </section>
             )}
 
             {selectedWork && (
-                <section className="catch-up-summary">
-                    <h3>
-                        {
-                            selectedWork
-                                .catalog
-                                .title
-                        }
-                    </h3>
+                <section className="catch-up-work-summary">
+                    <div className="catch-up-work-heading">
+                        <div>
+                            <span className="media-type">
+                                {
+                                    selectedWork
+                                        .catalog
+                                        .type
+                                }
+                            </span>
 
-                    <p>
-                        Progression actuelle :{' '}
-                        <strong>
-                            {
-                                selectedWork.entry
-                                    .progress
-                            }
-                        </strong>
+                            <h3>
+                                {
+                                    selectedWork
+                                        .catalog
+                                        .title
+                                }
+                            </h3>
+                        </div>
 
-                        {selectedWork.catalog
-                            .total != null && (
-                                <>
-                                    {' / '}
-                                    <strong>
-                                        {
-                                            selectedWork
-                                                .catalog
-                                                .total
-                                        }
-                                    </strong>
-                                </>
-                            )}
+                        <div className="catch-up-current-progress">
+                            <span>
+                                Progression actuelle
+                            </span>
 
-                        {' '}
-                        {selectedWork.catalog
-                            .type ===
-                            'anime'
-                            ? 'épisodes'
-                            : 'chapitres'}
-                    </p>
+                            <strong>
+                                {
+                                    selectedWork.entry
+                                        .progress
+                                }
+
+                                {selectedWork.catalog
+                                    .total != null &&
+                                    ` / ${selectedWork.catalog.total}`}
+                            </strong>
+                        </div>
+                    </div>
+
+                    {selectedWork.catalog
+                        .total != null &&
+                        selectedWork.catalog
+                            .total >
+                        0 && (
+                            <div className="catch-up-progress">
+                                <div className="catch-up-progress-track">
+                                    <div
+                                        className="catch-up-progress-fill"
+                                        style={{
+                                            width: `${Math.min(
+                                                100,
+                                                Math.round(
+                                                    (
+                                                        selectedWork.entry
+                                                            .progress /
+                                                        selectedWork.catalog
+                                                            .total
+                                                    ) *
+                                                    100,
+                                                ),
+                                            )}%`,
+                                        }}
+                                    />
+                                </div>
+
+                                <span>
+                                    {Math.min(
+                                        100,
+                                        Math.round(
+                                            (
+                                                selectedWork.entry
+                                                    .progress /
+                                                selectedWork.catalog
+                                                    .total
+                                            ) *
+                                            100,
+                                        ),
+                                    )}
+                                    % terminé
+                                </span>
+                            </div>
+                        )}
                 </section>
             )}
 
@@ -440,9 +614,21 @@ export function CatchUpPage() {
                 !('error' in plan) &&
                 selectedWork && (
                     <section className="catch-up-results">
-                        <h3>
-                            Ton plan
-                        </h3>
+                        <div className="section-heading">
+                            <span className="page-eyebrow">
+                                Ton rythme
+                            </span>
+
+                            <h3>
+                                Plan recommandé
+                            </h3>
+
+                            <p>
+                                Calculé à partir de ta
+                                progression actuelle et de
+                                ta date cible.
+                            </p>
+                        </div>
 
                         {plan.remaining ===
                             0 ? (
@@ -472,12 +658,13 @@ export function CatchUpPage() {
                                         </strong>
 
                                         <small>
-                                            {selectedWork
-                                                .catalog
-                                                .type ===
-                                                'anime'
-                                                ? 'épisodes'
-                                                : 'chapitres'}
+                                            {getMediaUnit(
+                                                selectedWork
+                                                    .catalog
+                                                    .type,
+                                                plan.remaining >
+                                                1,
+                                            )}
                                         </small>
                                     </article>
 
@@ -493,11 +680,14 @@ export function CatchUpPage() {
                                         </strong>
 
                                         <small>
-                                            jours
+                                            jour
+                                            {plan.days > 1
+                                                ? 's'
+                                                : ''}
                                         </small>
                                     </article>
 
-                                    <article className="catch-up-card">
+                                    <article className="catch-up-card catch-up-card-accent">
                                         <span>
                                             Rythme quotidien
                                         </span>
@@ -509,68 +699,87 @@ export function CatchUpPage() {
                                         </strong>
 
                                         <small>
-                                            {selectedWork
-                                                .catalog
-                                                .type ===
-                                                'anime'
-                                                ? 'épisode(s) / jour'
-                                                : 'chapitre(s) / jour'}
+                                            {getMediaUnit(
+                                                selectedWork
+                                                    .catalog
+                                                    .type,
+                                                plan.perDay >
+                                                1,
+                                            )}{' '}
+                                            / jour
                                         </small>
                                     </article>
 
                                     <article className="catch-up-card">
                                         <span>
-                                            Environ par semaine
+                                            Sur 7 jours
                                         </span>
 
                                         <strong>
                                             {
-                                                plan.perWeek
+                                                plan.weeklyEquivalent
                                             }
                                         </strong>
 
                                         <small>
-                                            {selectedWork
-                                                .catalog
-                                                .type ===
-                                                'anime'
-                                                ? 'épisodes'
-                                                : 'chapitres'}
+                                            {getMediaUnit(
+                                                selectedWork
+                                                    .catalog
+                                                    .type,
+                                                plan.weeklyEquivalent >
+                                                1,
+                                            )}
                                         </small>
                                     </article>
                                 </div>
 
-                                <p className="catch-up-advice">
-                                    Pour terminer{' '}
-                                    <strong>
+                                <div className="catch-up-advice">
+                                    <div>
+                                        <span className="page-eyebrow">
+                                            Conseil
+                                        </span>
+
+                                        <p>
+                                            Pour terminer{' '}
+                                            <strong>
+                                                {
+                                                    selectedWork
+                                                        .catalog
+                                                        .title
+                                                }
+                                            </strong>{' '}
+                                            avant le{' '}
+                                            <strong>
+                                                {new Date(
+                                                    `${targetDate}T12:00:00`,
+                                                ).toLocaleDateString(
+                                                    'fr-FR',
+                                                )}
+                                            </strong>
+                                            , vise environ{' '}
+                                            <strong>
+                                                {
+                                                    plan.perDay
+                                                }
+                                            </strong>{' '}
+                                            {getMediaUnit(
+                                                selectedWork
+                                                    .catalog
+                                                    .type,
+                                                plan.perDay >
+                                                1,
+                                            )}{' '}
+                                            par jour.
+                                        </p>
+                                    </div>
+
+                                    <span className="catch-up-target-badge">
+                                        Objectif :{' '}
                                         {
-                                            selectedWork
-                                                .catalog
-                                                .title
+                                            targetDate
                                         }
-                                    </strong>{' '}
-                                    avant le{' '}
-                                    <strong>
-                                        {new Date(
-                                            `${targetDate}T12:00:00`,
-                                        ).toLocaleDateString(
-                                            'fr-FR',
-                                        )}
-                                    </strong>
-                                    , vise environ{' '}
-                                    <strong>
-                                        {
-                                            plan.perDay
-                                        }
-                                    </strong>{' '}
-                                    {selectedWork
-                                        .catalog
-                                        .type ===
-                                        'anime'
-                                        ? 'épisode(s)'
-                                        : 'chapitre(s)'}{' '}
-                                    par jour.
-                                </p>
+                                    </span>
+                                </div>
                             </>
                         )}
                     </section>
