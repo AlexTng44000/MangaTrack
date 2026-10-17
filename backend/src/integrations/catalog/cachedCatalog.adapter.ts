@@ -1,13 +1,16 @@
 import type {
     CatalogPageResult,
     CatalogPort,
+    CatalogFilters
 } from '../../modules/catalog/catalog.types.js';
 
 import type {
     Redis,
 } from 'ioredis';
 
+
 export class CachedCatalogAdapter
+
     implements CatalogPort {
     private readonly freshKey =
         'catalog:anilist:fresh';
@@ -25,12 +28,18 @@ export class CachedCatalogAdapter
 
     async getAll(
         page = 1,
+        filters: CatalogFilters = {},
     ): Promise<CatalogPageResult> {
         // Pour le moment les pages suivantes
         // vont directement vers AniList.
-        if (page !== 1) {
+        if (
+            page !== 1 ||
+            filters.type ||
+            filters.genre
+        ) {
             return this.source.getAll(
                 page,
+                filters,
             );
         }
 
@@ -92,10 +101,12 @@ export class CachedCatalogAdapter
     async search(
         query: string,
         page = 1,
+        filters: CatalogFilters = {},
     ): Promise<CatalogPageResult> {
         return this.source.search(
             query,
             page,
+            filters,
         );
     }
 }

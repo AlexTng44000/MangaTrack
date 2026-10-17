@@ -162,3 +162,12 @@ h2 {
   cursor: pointer;
   font-weight: 600;
 }
+
+.catalog-search select {
+  padding: 12px 14px;
+  border: 1px solid #333;
+  border-radius: 8px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+}

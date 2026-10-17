@@ -6,6 +6,11 @@ import type {
     CatalogService,
 } from './catalog.service.js';
 
+import type {
+    CatalogFilters,
+    MediaType,
+} from './catalog.types.js';
+
 export function createCatalogRouter(
     catalogService: CatalogService,
 ): Router {
@@ -26,6 +31,40 @@ export function createCatalogRouter(
                     ? Number(req.query.page)
                     : 1;
 
+            const rawType =
+                typeof req.query.type ===
+                    'string'
+                    ? req.query.type
+                    : undefined;
+            const type: MediaType | undefined =
+                rawType === 'anime' ||
+                    rawType === 'manga'
+                    ? rawType
+                    : undefined;
+
+            if (
+                rawType &&
+                rawType !== 'anime' &&
+                rawType !== 'manga'
+            ) {
+                return res.status(400).json({
+                    error:
+                        'Le type doit être anime ou manga',
+                });
+            }
+
+            const genre =
+                typeof req.query.genre ===
+                    'string'
+                    ? req.query.genre.trim()
+                    : undefined;
+
+            const filters: CatalogFilters = {
+                type,
+                genre:
+                    genre || undefined,
+            };
+
             if (
                 !Number.isInteger(rawPage) ||
                 rawPage < 1
@@ -41,6 +80,7 @@ export function createCatalogRouter(
                     await catalogService.search(
                         search,
                         rawPage,
+                        filters,
                     );
 
                 return res.json(result);
@@ -49,6 +89,7 @@ export function createCatalogRouter(
             const result =
                 await catalogService.getAll(
                     rawPage,
+                    filters,
                 );
 
             return res.json(result);

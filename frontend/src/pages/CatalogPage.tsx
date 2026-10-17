@@ -48,6 +48,22 @@ export function CatalogPage() {
     const [loadingMore, setLoadingMore] =
         useState(false);
 
+    const [typeFilter, setTypeFilter] =
+        useState<
+            '' | 'anime' | 'manga'
+        >('');
+
+    const [genreFilter, setGenreFilter] =
+        useState('');
+
+    const [activeType, setActiveType] =
+        useState<
+            '' | 'anime' | 'manga'
+        >('');
+
+    const [activeGenre, setActiveGenre] =
+        useState('');
+
     useEffect(() => {
         Promise.all([
             getCatalog(undefined, 1),
@@ -126,6 +142,10 @@ export function CatalogPage() {
                     normalizedSearch ||
                     undefined,
                     1,
+                    typeFilter ||
+                    undefined,
+                    genreFilter ||
+                    undefined,
                 );
 
             setItems(
@@ -143,6 +163,13 @@ export function CatalogPage() {
             setActiveSearch(
                 normalizedSearch,
             );
+            setActiveType(
+                typeFilter,
+            );
+
+            setActiveGenre(
+                genreFilter,
+            );
         } catch {
             setError(
                 'Impossible d’effectuer la recherche.',
@@ -156,6 +183,11 @@ export function CatalogPage() {
         setSearch('');
         setActiveSearch('');
         setError(null);
+        setTypeFilter('');
+        setGenreFilter('');
+
+        setActiveType('');
+        setActiveGenre('');
 
         try {
             const result =
@@ -195,6 +227,10 @@ export function CatalogPage() {
                     activeSearch ||
                     undefined,
                     nextPage,
+                    activeType ||
+                    undefined,
+                    activeGenre ||
+                    undefined,
                 );
 
             setItems(
@@ -244,7 +280,90 @@ export function CatalogPage() {
                         )
                     }
                 />
+                <select
+                    value={typeFilter}
+                    onChange={(event) =>
+                        setTypeFilter(
+                            event.target.value as
+                            | ''
+                            | 'anime'
+                            | 'manga',
+                        )
+                    }
+                >
+                    <option value="">
+                        Tous les types
+                    </option>
 
+                    <option value="anime">
+                        Anime
+                    </option>
+
+                    <option value="manga">
+                        Manga
+                    </option>
+                </select>
+
+                <select
+                    value={genreFilter}
+                    onChange={(event) =>
+                        setGenreFilter(
+                            event.target.value,
+                        )
+                    }
+                >
+                    <option value="">
+                        Tous les genres
+                    </option>
+
+                    <option value="Action">
+                        Action
+                    </option>
+
+                    <option value="Adventure">
+                        Adventure
+                    </option>
+
+                    <option value="Comedy">
+                        Comedy
+                    </option>
+
+                    <option value="Drama">
+                        Drama
+                    </option>
+
+                    <option value="Fantasy">
+                        Fantasy
+                    </option>
+
+                    <option value="Horror">
+                        Horror
+                    </option>
+
+                    <option value="Mystery">
+                        Mystery
+                    </option>
+
+                    <option value="Psychological">
+                        Psychological
+                    </option>
+
+                    <option value="Romance">
+                        Romance
+                    </option>
+
+                    <option value="Sci-Fi">
+                        Sci-Fi
+                    </option>
+
+                    <option value="Slice of Life">
+                        Slice of Life
+                    </option>
+
+                    <option value="Supernatural">
+                        Supernatural
+                    </option>
+                </select>
                 <button
                     type="submit"
                     disabled={searching}
@@ -256,7 +375,11 @@ export function CatalogPage() {
 
                 {(
                     search ||
-                    activeSearch
+                    activeSearch ||
+                    typeFilter ||
+                    activeType ||
+                    genreFilter ||
+                    activeGenre
                 ) && (
                         <button
                             type="button"

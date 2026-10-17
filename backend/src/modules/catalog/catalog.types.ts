@@ -15,13 +15,20 @@ export interface CatalogPageResult {
     hasNextPage: boolean;
 }
 
+export interface CatalogFilters {
+    type?: MediaType;
+    genre?: string;
+}
+
 export interface CatalogPort {
     getAll(
         page?: number,
+        filters?: CatalogFilters,
     ): Promise<CatalogPageResult>;
 
     search(
         query: string,
         page?: number,
+        filters?: CatalogFilters,
     ): Promise<CatalogPageResult>;
 }

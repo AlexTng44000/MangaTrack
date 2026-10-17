@@ -1,4 +1,5 @@
 import type {
+    CatalogFilters,
     CatalogItem,
     CatalogPageResult,
     CatalogPort,
@@ -40,22 +41,7 @@ export class FakeCatalogAdapter
 
     async getAll(
         page = 1,
-    ): Promise<CatalogPageResult> {
-        return {
-            items:
-                page === 1
-                    ? this.items
-                    : [],
-
-            page,
-
-            hasNextPage: false,
-        };
-    }
-
-    async search(
-        query: string,
-        page = 1,
+        filters: CatalogFilters = {},
     ): Promise<CatalogPageResult> {
         if (page !== 1) {
             return {
@@ -65,25 +51,63 @@ export class FakeCatalogAdapter
             };
         }
 
-        const normalizedQuery =
-            query
-                .trim()
-                .toLowerCase();
+        let items =
+            [...this.items];
 
-        const items =
-            this.items.filter(
-                (item) =>
-                    item.title
-                        .toLowerCase()
-                        .includes(
-                            normalizedQuery,
+        if (filters.type) {
+            items =
+                items.filter(
+                    (item) =>
+                        item.type ===
+                        filters.type,
+                );
+        }
+
+        if (filters.genre) {
+            items =
+                items.filter(
+                    (item) =>
+                        item.genres.includes(
+                            filters.genre!,
                         ),
-            );
+                );
+        }
 
         return {
             items,
             page,
             hasNextPage: false,
+        };
+    }
+
+    async search(
+        query: string,
+        page = 1,
+        filters: CatalogFilters = {},
+    ): Promise<CatalogPageResult> {
+        const result =
+            await this.getAll(
+                page,
+                filters,
+            );
+
+        const normalizedQuery =
+            query
+                .trim()
+                .toLowerCase();
+
+        return {
+            ...result,
+
+            items:
+                result.items.filter(
+                    (item) =>
+                        item.title
+                            .toLowerCase()
+                            .includes(
+                                normalizedQuery,
+                            ),
+                ),
         };
     }
 }

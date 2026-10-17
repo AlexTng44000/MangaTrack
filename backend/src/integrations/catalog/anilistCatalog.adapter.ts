@@ -1,4 +1,5 @@
 import type {
+    CatalogFilters,
     CatalogItem,
     CatalogPageResult,
     CatalogPort,
@@ -43,35 +44,42 @@ export class AniListCatalogAdapter
 
     async getAll(
         page = 1,
+        filters: CatalogFilters = {},
     ): Promise<CatalogPageResult> {
         return this.fetchPage(
             page,
+            undefined,
+            filters,
         );
     }
 
     async search(
         search: string,
         page = 1,
+        filters: CatalogFilters = {},
     ): Promise<CatalogPageResult> {
         return this.fetchPage(
             page,
             search,
+            filters,
         );
     }
 
     private async fetchPage(
         page: number,
         search?: string,
+        filters: CatalogFilters = {},
     ): Promise<CatalogPageResult> {
         const perPage =
             search ? 25 : 50;
 
         const query = `
-            query (
-                $page: Int!
-                $perPage: Int!
-                $search: String
-            ) {
+        query (
+            $page: Int!
+            $perPage: Int!
+            $search: String
+            $genre: String
+        ) {
                 anime: Page(
                     page: $page
                     perPage: $perPage
@@ -84,6 +92,7 @@ export class AniListCatalogAdapter
                         type: ANIME
                         isAdult: false
                         search: $search
+                        genre: $genre
                         sort: [POPULARITY_DESC]
                     ) {
                         id
@@ -110,6 +119,7 @@ export class AniListCatalogAdapter
                         type: MANGA
                         isAdult: false
                         search: $search
+                        genre: $genre
                         sort: [POPULARITY_DESC]
                     ) {
                         id
@@ -148,6 +158,8 @@ export class AniListCatalogAdapter
                             perPage,
                             search:
                                 search || null,
+                            genre:
+                                filters.genre || null,
                         },
                     }),
                 },
@@ -176,10 +188,22 @@ export class AniListCatalogAdapter
             );
         }
 
-        const media = [
-            ...result.data.anime.media,
-            ...result.data.manga.media,
-        ];
+        let media: AniListMedia[];
+
+        if (filters.type === 'anime') {
+            media =
+                result.data.anime.media;
+        } else if (
+            filters.type === 'manga'
+        ) {
+            media =
+                result.data.manga.media;
+        } else {
+            media = [
+                ...result.data.anime.media,
+                ...result.data.manga.media,
+            ];
+        }
 
         const items =
             media.map(
@@ -200,17 +224,34 @@ export class AniListCatalogAdapter
                 }),
             );
 
-        return {
-            items,
-            page,
+        let hasNextPage: boolean;
 
-            hasNextPage:
+        if (filters.type === 'anime') {
+            hasNextPage =
+                result.data.anime
+                    .pageInfo
+                    .hasNextPage;
+        } else if (
+            filters.type === 'manga'
+        ) {
+            hasNextPage =
+                result.data.manga
+                    .pageInfo
+                    .hasNextPage;
+        } else {
+            hasNextPage =
                 result.data.anime
                     .pageInfo
                     .hasNextPage ||
                 result.data.manga
                     .pageInfo
-                    .hasNextPage,
+                    .hasNextPage;
+        }
+
+        return {
+            items,
+            page,
+            hasNextPage,
         };
     }
 }

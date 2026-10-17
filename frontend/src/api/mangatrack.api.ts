@@ -38,6 +38,8 @@ async function authenticatedFetch(
 export async function getCatalog(
     search?: string,
     page = 1,
+    type?: 'anime' | 'manga',
+    genre?: string,
 ): Promise<CatalogPageResult> {
     const params =
         new URLSearchParams();
@@ -54,6 +56,23 @@ export async function getCatalog(
         params.set(
             'search',
             search.trim(),
+        );
+    }
+
+    if (type) {
+        params.set(
+            'type',
+            type,
+        );
+    }
+
+    if (
+        genre &&
+        genre.trim()
+    ) {
+        params.set(
+            'genre',
+            genre.trim(),
         );
     }
 

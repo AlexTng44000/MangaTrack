@@ -1,4 +1,5 @@
 import type {
+    CatalogFilters,
     CatalogPageResult,
     CatalogPort,
 } from './catalog.types.js';
@@ -11,19 +12,23 @@ export class CatalogService {
 
     async getAll(
         page = 1,
+        filters: CatalogFilters = {},
     ): Promise<CatalogPageResult> {
         return this.catalogPort.getAll(
             page,
+            filters,
         );
     }
 
     async search(
         query: string,
         page = 1,
+        filters: CatalogFilters = {},
     ): Promise<CatalogPageResult> {
         return this.catalogPort.search(
             query,
             page,
+            filters,
         );
     }
 }
