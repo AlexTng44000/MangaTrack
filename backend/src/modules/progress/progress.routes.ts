@@ -1,7 +1,13 @@
 import { Router } from 'express';
 
-import type { ProgressService } from './progress.service.js';
-import type { UpdateProgressInput } from './progress.types.js';
+import type {
+    ProgressService,
+} from './progress.service.js';
+
+import {
+    progressParamsSchema,
+    updateProgressSchema,
+} from './progress.schema.js';
 
 export function createProgressRouter(
     progressService: ProgressService,
@@ -11,28 +17,44 @@ export function createProgressRouter(
     router.patch(
         '/:libraryEntryId',
         async (req, res) => {
-            const libraryEntryId = Number(
-                req.params.libraryEntryId,
-            );
+            const paramsValidation =
+                progressParamsSchema.safeParse(
+                    req.params,
+                );
 
-            const input =
-                req.body as UpdateProgressInput;
-
-            if (
-                Number.isNaN(libraryEntryId) ||
-                typeof input.progress !== 'number' ||
-                input.progress < 0
-            ) {
+            if (!paramsValidation.success) {
                 return res.status(400).json({
                     error:
-                        'Une progression valide est obligatoire',
+                        'Identifiant invalide',
+                    details:
+                        paramsValidation.error.flatten(),
                 });
             }
+
+            const bodyValidation =
+                updateProgressSchema.safeParse(
+                    req.body,
+                );
+
+            if (!bodyValidation.success) {
+                return res.status(400).json({
+                    error:
+                        'Progression invalide',
+                    details:
+                        bodyValidation.error.flatten(),
+                });
+            }
+
+            const { libraryEntryId } =
+                paramsValidation.data;
+
+            const { progress } =
+                bodyValidation.data;
 
             const entry =
                 await progressService.updateProgress(
                     libraryEntryId,
-                    input.progress,
+                    progress,
                 );
 
             if (!entry) {

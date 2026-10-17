@@ -4,9 +4,9 @@ import type {
     NotificationService,
 } from './notification.service.js';
 
-import type {
-    CreateNotificationInput,
-} from './notification.types.js';
+import {
+    createNotificationSchema,
+} from './notification.schema.js';
 
 export function createNotificationRouter(
     notificationService: NotificationService,
@@ -14,19 +14,20 @@ export function createNotificationRouter(
     const router = Router();
 
     router.post('/', async (req, res) => {
-        const input =
-            req.body as CreateNotificationInput;
+        const validation =
+            createNotificationSchema.safeParse(
+                req.body,
+            );
 
-        if (
-            !input.userId ||
-            !input.email ||
-            !input.message
-        ) {
+        if (!validation.success) {
             return res.status(400).json({
-                error:
-                    'userId, email et message sont obligatoires',
+                error: 'Données invalides',
+                details:
+                    validation.error.flatten(),
             });
         }
+
+        const input = validation.data;
 
         try {
             const result =

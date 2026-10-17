@@ -4,6 +4,9 @@ import type { LibraryService } from './library.service.js';
 import type {
     CreateLibraryEntryInput,
 } from './library.types.js';
+import {
+    createLibraryEntrySchema,
+} from './library.schema.js';
 
 export function createLibraryRouter(
     libraryService: LibraryService,
@@ -18,19 +21,20 @@ export function createLibraryRouter(
     });
 
     router.post('/', async (req, res) => {
-        const input =
-            req.body as CreateLibraryEntryInput;
+        const validation =
+            createLibraryEntrySchema.safeParse(
+                req.body,
+            );
 
-        if (
-            !input.userId ||
-            !input.catalogItemId ||
-            !input.status
-        ) {
+        if (!validation.success) {
             return res.status(400).json({
-                error:
-                    'userId, catalogItemId et status sont obligatoires',
+                error: 'Données invalides',
+                details:
+                    validation.error.flatten(),
             });
         }
+
+        const input = validation.data;
 
         try {
             const entry =
