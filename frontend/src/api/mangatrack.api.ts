@@ -11,6 +11,7 @@ import type {
 
 import {
     getToken,
+    logout,
 } from '../auth/auth';
 
 const API_URL =
@@ -20,22 +21,44 @@ async function authenticatedFetch(
     url: string,
     options: RequestInit = {},
 ): Promise<Response> {
-    const token = getToken();
+    const token =
+        getToken();
 
     if (!token) {
+        logout();
+        window.location.reload();
+
         throw new Error(
             'Authentification requise',
         );
     }
 
-    return fetch(url, {
-        ...options,
-        headers: {
-            ...options.headers,
-            Authorization:
-                `Bearer ${token}`,
-        },
-    });
+    const response =
+        await fetch(
+            url,
+            {
+                ...options,
+                headers: {
+                    ...options.headers,
+                    Authorization:
+                        `Bearer ${token}`,
+                },
+            },
+        );
+
+    if (
+        response.status === 401
+    ) {
+        logout();
+
+        window.location.reload();
+
+        throw new Error(
+            'Session expirée',
+        );
+    }
+
+    return response;
 }
 
 export async function getCatalog(
