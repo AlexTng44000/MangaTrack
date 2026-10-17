@@ -42,12 +42,12 @@ body {
   margin: 0;
   display: block;
 
-  background-color: #0b0911;
+  background-color: #fbfaff;
 
   background-image:
-    linear-gradient(rgba(11, 9, 17, 0.72),
-      rgba(11, 9, 17, 0.78)),
-    url('/webtoon-fond.png');
+    linear-gradient(rgba(255, 255, 255, 0.70),
+      rgba(250, 248, 255, 0.76)),
+    url('/webtoon-fond-blanc.png');
 
   background-size: cover;
   background-position: center;
@@ -4276,4 +4276,264 @@ select option {
     min-width: 0;
     padding: 10px 8px;
   }
+}
+
+.app-brand {
+  width: 215px;
+  height: 54px;
+  flex: 0 0 215px;
+
+  background-image: url('/logo.png');
+  background-size: contain;
+  background-position: left center;
+  background-repeat: no-repeat;
+}
+
+.app-brand-mark,
+.app-brand-copy {
+  display: none;
+}
+
+.catalog-heading h2,
+.library-heading h2,
+.calendar-heading h2,
+.stats-heading h2,
+.recommendations-heading h2,
+.catch-up-heading h2,
+.reminders-heading h2,
+.admin-heading h2 {
+  color: #21182f;
+  text-shadow: none;
+}
+
+.catalog-heading p,
+.library-heading p,
+.calendar-heading p,
+.stats-heading p,
+.recommendations-heading p,
+.catch-up-heading p,
+.reminders-heading p,
+.admin-heading p {
+  color: #706879;
+}
+
+.page-eyebrow {
+  color: #7c3aed;
+}
+
+.calendar-day-header h3,
+.calendar-day-header strong,
+.calendar-day-header span,
+.section-heading h3,
+.section-heading p {
+  color: #2a2138;
+}
+
+.calendar-day-header>span,
+.section-heading>span {
+  color: #7c3aed;
+}
+
+.catalog-result-summary,
+.library-count,
+.calendar-summary article,
+.reminders-summary article,
+.stats-main-score,
+.recommendations-count,
+.catch-up-library-count {
+  border-color: rgba(60, 40, 80, 0.14);
+  background: rgba(37, 30, 49, 0.92);
+  box-shadow:
+    0 12px 28px rgba(38, 25, 52, 0.14);
+}
+
+.catalog-search,
+.library-filters,
+.reminder-create-card,
+.recommendation-profile,
+.catch-up-form-card {
+  border-color: rgba(60, 40, 80, 0.14);
+  background:
+    linear-gradient(145deg,
+      rgba(52, 45, 64, 0.94),
+      rgba(35, 29, 45, 0.96));
+  box-shadow:
+    0 14px 30px rgba(38, 25, 52, 0.13);
+}
+
+.catalog-card,
+.library-card,
+.calendar-release-card,
+.reminder-card,
+.recommendation-card,
+.catch-up-card,
+.stats-card {
+  border-color: rgba(60, 40, 80, 0.14);
+  background:
+    linear-gradient(145deg,
+      rgba(54, 47, 65, 0.95),
+      rgba(36, 30, 46, 0.97));
+  box-shadow:
+    0 14px 30px rgba(38, 25, 52, 0.12);
+}
+
+.catalog-card .media-type,
+.library-card .media-type {
+  color: #d8d0e2;
+}
+
+.catalog-card h3,
+.library-card h3,
+.calendar-release-card h4,
+.reminder-card h4,
+.recommendation-card h3,
+.catch-up-card h3 {
+  color: #f8f4ff;
+}
+
+.app-brand {
+  width: 72px;
+  height: 54px;
+  flex: 0 0 72px;
+  background-size: 54px 54px;
+  background-position: left center;
+}
+
+body {
+  background-color: #fbfaff;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.42),
+      rgba(250, 248, 255, 0.52)),
+    url('/webtoon-fond-blanc.png');
+}
+
+.app-brand {
+  width: 82px;
+  height: 62px;
+  flex: 0 0 82px;
+  background-image: url('/logo.png');
+  background-size: 62px 62px;
+  background-position: left center;
+  background-repeat: no-repeat;
+}
+
+.app-header {
+  min-height: 62px;
+}
+
+.auth-page::before {
+  content: "";
+  display: block;
+  width: 112px;
+  height: 112px;
+  margin: -6px auto 8px;
+  background-image: url('/logo.png');
+  background-size: contain;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+.auth-page h1 {
+  margin-top: 2px;
+}
+
+.stats-overview-card.stats-overview-card-accent {
+  border-color: rgba(168, 85, 247, 0.34);
+  background:
+    linear-gradient(145deg,
+      rgba(67, 52, 82, 0.98),
+      rgba(42, 34, 54, 0.98));
+  box-shadow:
+    0 14px 30px rgba(42, 28, 58, 0.14);
+}
+
+.stats-overview-card.stats-overview-card-accent .stats-card-label {
+  color: #d8c9e6;
+}
+
+.stats-overview-card.stats-overview-card-accent>strong {
+  color: #ffffff;
+}
+
+.stats-overview-card.stats-overview-card-accent>small {
+  color: #cfc4d8;
+}
+
+.stats-panel .section-heading h3 {
+  color: #f7f3fb;
+}
+
+.stats-panel .section-heading p {
+  color: #b9afc3;
+}
+
+.stats-panel .page-eyebrow {
+  color: #a855f7;
+}
+
+.stats-media-card .media-type,
+.stats-media-card>small,
+.stats-media-progress span,
+.stats-status-heading>span:last-child {
+  color: #c7bdcf;
+}
+
+.catch-up-advice {
+  border: 1px solid rgba(168, 85, 247, 0.22);
+  background:
+    linear-gradient(145deg,
+      rgba(55, 44, 68, 0.97),
+      rgba(37, 30, 47, 0.98));
+  box-shadow:
+    0 14px 30px rgba(42, 28, 58, 0.12);
+}
+
+.catch-up-advice .page-eyebrow {
+  color: #c084fc;
+}
+
+.catch-up-advice p {
+  color: #d8cfdf;
+}
+
+.catch-up-advice p strong {
+  color: #ffffff;
+}
+
+.catch-up-target-badge {
+  border-color: rgba(192, 132, 252, 0.28);
+  background: rgba(168, 85, 247, 0.12);
+  color: #e9d5ff;
+}
+
+@media (max-width: 760px) {
+  .app-brand {
+    width: 66px;
+    height: 52px;
+    flex-basis: 66px;
+    background-size: 52px 52px;
+  }
+}
+
+.auth-page h1 {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  margin-top: 0;
+}
+
+.auth-page h1::before {
+  content: "";
+  display: block;
+  width: 64px;
+  height: 64px;
+  flex: 0 0 64px;
+
+  background-image: url('/logo.png');
+  background-size: contain;
+  background-position: center;
+  background-repeat: no-repeat;
+
+  border-radius: 12px;
 }

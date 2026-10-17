@@ -20,6 +20,18 @@ export class CachedCatalogAdapter
     private readonly staleTtl =
         24 * 60 * 60;
 
+    private readonly calendarFreshTtl =
+        5 * 60;
+
+    private readonly calendarStaleTtl =
+        6 * 60 * 60;
+
+    private readonly inFlight =
+        new Map<
+            string,
+            Promise<unknown>
+        >();
+
     constructor(
         private readonly source:
             CatalogPort,
@@ -67,6 +79,31 @@ export class CachedCatalogAdapter
                 filters,
             );
 
+        return this.readThroughCache(
+            baseKey,
+            () =>
+                search
+                    ? this.source.search(
+                        search,
+                        page,
+                        filters,
+                    )
+                    : this.source.getAll(
+                        page,
+                        filters,
+                    ),
+        );
+    }
+
+    private async readThroughCache<T>(
+        baseKey: string,
+        sourceCall:
+            () => Promise<T>,
+        freshTtl =
+            this.freshTtl,
+        staleTtl =
+            this.staleTtl,
+    ): Promise<T> {
         const freshKey =
             `${baseKey}:fresh`;
 
@@ -81,62 +118,136 @@ export class CachedCatalogAdapter
         if (fresh) {
             return JSON.parse(
                 fresh,
-            ) as CatalogPageResult;
+            ) as T;
         }
 
-        try {
-            const result =
-                search
-                    ? await this.source.search(
-                        search,
-                        page,
-                        filters,
-                    )
-                    : await this.source.getAll(
-                        page,
-                        filters,
+        const existing =
+            this.inFlight.get(
+                baseKey,
+            );
+
+        if (existing) {
+            return existing as
+                Promise<T>;
+        }
+
+        const pending =
+            (async () => {
+                try {
+                    const result =
+                        await this.with429Retry(
+                            sourceCall,
+                        );
+
+                    const serialized =
+                        JSON.stringify(
+                            result,
+                        );
+
+                    await Promise.all([
+                        this.redis.set(
+                            freshKey,
+                            serialized,
+                            'EX',
+                            freshTtl,
+                        ),
+
+                        this.redis.set(
+                            staleKey,
+                            serialized,
+                            'EX',
+                            staleTtl,
+                        ),
+                    ]);
+
+                    return result;
+                } catch (error) {
+                    const stale =
+                        await this.redis.get(
+                            staleKey,
+                        );
+
+                    if (stale) {
+                        console.warn(
+                            `AniList indisponible : cache de secours utilisé pour ${baseKey}`,
+                        );
+
+                        return JSON.parse(
+                            stale,
+                        ) as T;
+                    }
+
+                    throw error;
+                } finally {
+                    this.inFlight.delete(
+                        baseKey,
+                    );
+                }
+            })();
+
+        this.inFlight.set(
+            baseKey,
+            pending,
+        );
+
+        return pending;
+    }
+
+    private async with429Retry<T>(
+        operation:
+            () => Promise<T>,
+    ): Promise<T> {
+        const delays =
+            [1200, 2500];
+
+        let lastError:
+            unknown;
+
+        for (
+            let attempt = 0;
+            attempt <= delays.length;
+            attempt += 1
+        ) {
+            try {
+                return await operation();
+            } catch (error) {
+                lastError =
+                    error;
+
+                const message =
+                    error instanceof Error
+                        ? error.message
+                        : String(
+                            error,
+                        );
+
+                const isRateLimit =
+                    message.includes(
+                        '429',
                     );
 
-            const serialized =
-                JSON.stringify(
-                    result,
+                if (
+                    !isRateLimit ||
+                    attempt ===
+                    delays.length
+                ) {
+                    throw error;
+                }
+
+                await new Promise<void>(
+                    (resolve) => {
+                        setTimeout(
+                            resolve,
+                            delays[
+                            attempt
+                            ],
+                        );
+                    },
                 );
-
-            await Promise.all([
-                this.redis.set(
-                    freshKey,
-                    serialized,
-                    'EX',
-                    this.freshTtl,
-                ),
-
-                this.redis.set(
-                    staleKey,
-                    serialized,
-                    'EX',
-                    this.staleTtl,
-                ),
-            ]);
-
-            return result;
-        } catch (error) {
-            const stale =
-                await this.redis.get(
-                    staleKey,
-                );
-
-            if (stale) {
-                console.warn(
-                    `AniList indisponible : cache de secours utilisé pour ${baseKey}`,
-                );
-
-                return JSON.parse(
-                    stale,
-                ) as CatalogPageResult;
             }
-
-            throw error;
         }
+
+        throw lastError;
     }
 
     private buildKey(
@@ -188,16 +299,60 @@ export class CachedCatalogAdapter
     async getByIds(
         ids: number[],
     ): Promise<CatalogItem[]> {
-        return this.source.getByIds(
-            ids,
+        if (
+            ids.length === 0
+        ) {
+            return [];
+        }
+
+        const normalizedIds =
+            [...new Set(ids)]
+                .sort(
+                    (
+                        first,
+                        second,
+                    ) =>
+                        first -
+                        second,
+                );
+
+        const baseKey = [
+            'catalog',
+            'anilist',
+            'by-ids',
+            normalizedIds.join(
+                ',',
+            ),
+        ].join(':');
+
+        return this.readThroughCache(
+            baseKey,
+            () =>
+                this.source.getByIds(
+                    normalizedIds,
+                ),
         );
     }
 
     async getDetails(
         id: number,
     ): Promise<CatalogDetails | null> {
-        return this.source.getDetails(
-            id,
+        const baseKey =
+            [
+                'catalog',
+                'anilist',
+                'details',
+                id,
+            ].join(':');
+
+        return this.readThroughCache(
+            baseKey,
+            () =>
+                this.source.getDetails(
+                    id,
+                ),
+            60 * 60,
+            24 * 60 * 60,
         );
     }
 
@@ -205,10 +360,42 @@ export class CachedCatalogAdapter
         from: Date,
         to: Date,
     ): Promise<CalendarRelease[]> {
-        return this.source
-            .getUpcomingReleases(
-                from,
-                to,
+        const bucketSize =
+            10 *
+            60 *
+            1000;
+
+        const fromBucket =
+            Math.floor(
+                from.getTime() /
+                bucketSize,
             );
+
+        const toBucket =
+            Math.floor(
+                to.getTime() /
+                bucketSize,
+            );
+
+        const baseKey =
+            [
+                'catalog',
+                'anilist',
+                'calendar',
+                fromBucket,
+                toBucket,
+            ].join(':');
+
+        return this.readThroughCache(
+            baseKey,
+            () =>
+                this.source
+                    .getUpcomingReleases(
+                        from,
+                        to,
+                    ),
+            this.calendarFreshTtl,
+            this.calendarStaleTtl,
+        );
     }
 }
