@@ -1,6 +1,7 @@
 import type {
     CatalogFilters,
     CatalogPageResult,
+    CatalogItem,
     CatalogPort,
 } from '../../modules/catalog/catalog.types.js';
 
@@ -162,5 +163,12 @@ export class CachedCatalogAdapter
                 genre,
             )}`,
         ].join(':');
+    }
+    async getByIds(
+        ids: number[],
+    ): Promise<CatalogItem[]> {
+        return this.source.getByIds(
+            ids,
+        );
     }
 }

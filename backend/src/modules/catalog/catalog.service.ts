@@ -1,5 +1,6 @@
 import type {
     CatalogFilters,
+    CatalogItem,
     CatalogPageResult,
     CatalogPort,
 } from './catalog.types.js';
@@ -29,6 +30,13 @@ export class CatalogService {
             query,
             page,
             filters,
+        );
+    }
+    async getByIds(
+        ids: number[],
+    ): Promise<CatalogItem[]> {
+        return this.catalogPort.getByIds(
+            ids,
         );
     }
 }

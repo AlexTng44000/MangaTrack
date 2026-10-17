@@ -110,4 +110,12 @@ export class FakeCatalogAdapter
                 ),
         };
     }
+    async getByIds(
+        ids: number[],
+    ): Promise<CatalogItem[]> {
+        return this.items.filter(
+            (item) =>
+                ids.includes(item.id),
+        );
+    }
 }

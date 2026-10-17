@@ -15,6 +15,9 @@ interface AniListMedia {
 
     type: 'ANIME' | 'MANGA';
     genres: string[];
+
+    episodes: number | null;
+    chapters: number | null;
 }
 
 interface AniListPage {
@@ -253,5 +256,121 @@ export class AniListCatalogAdapter
             page,
             hasNextPage,
         };
+    }
+    async getByIds(
+        ids: number[],
+    ): Promise<CatalogItem[]> {
+        if (ids.length === 0) {
+            return [];
+        }
+
+        const query = `
+            query ($ids: [Int]) {
+                Page(
+                    page: 1
+                    perPage: 50
+                ) {
+                    media(
+                        id_in: $ids
+                        isAdult: false
+                    ) {
+                        id
+    
+                        title {
+                            english
+                            romaji
+                        }
+    
+                        type
+                        genres
+                        episodes
+                        chapters
+                    }
+                }
+            }
+        `;
+
+        const response =
+            await fetch(
+                this.apiUrl,
+                {
+                    method: 'POST',
+
+                    headers: {
+                        'Content-Type':
+                            'application/json',
+
+                        Accept:
+                            'application/json',
+                    },
+
+                    body: JSON.stringify({
+                        query,
+                        variables: {
+                            ids,
+                        },
+                    }),
+                },
+            );
+
+        if (!response.ok) {
+            const errorBody =
+                await response.text();
+
+            throw new Error(
+                `AniList API error: ${response.status} - ${errorBody}`,
+            );
+        }
+
+        const rawResult =
+            await response.json();
+
+        const result =
+            rawResult as {
+                data?: {
+                    Page: {
+                        media:
+                        AniListMedia[];
+                    };
+                };
+
+                errors?: Array<{
+                    message: string;
+                }>;
+            };
+
+        if (
+            result.errors ||
+            !result.data
+        ) {
+            throw new Error(
+                result.errors?.[0]
+                    ?.message ??
+                'Réponse AniList invalide',
+            );
+        }
+
+        return result.data.Page.media.map(
+            (item): CatalogItem => ({
+                id: item.id,
+
+                title:
+                    item.title.english ??
+                    item.title.romaji,
+
+                type:
+                    item.type === 'ANIME'
+                        ? 'anime'
+                        : 'manga',
+
+                genres:
+                    item.genres ?? [],
+
+                total:
+                    item.type === 'ANIME'
+                        ? item.episodes
+                        : item.chapters,
+            }),
+        );
     }
 }

@@ -7,6 +7,7 @@ export interface CatalogItem {
     title: string;
     type: MediaType;
     genres: string[];
+    total?: number | null;
 }
 
 export interface CatalogPageResult {
@@ -31,4 +32,7 @@ export interface CatalogPort {
         page?: number,
         filters?: CatalogFilters,
     ): Promise<CatalogPageResult>;
+    getByIds(
+        ids: number[],
+    ): Promise<CatalogItem[]>;
 }

@@ -1,5 +1,6 @@
 import type {
     CatalogPageResult,
+    CatalogItem,
 } from '../types/catalog';
 
 import type {
@@ -299,6 +300,27 @@ export async function updateLibraryFavorite(
     if (!response.ok) {
         throw new Error(
             'Impossible de modifier le favori',
+        );
+    }
+
+    return response.json();
+}
+
+export async function getCatalogByIds(
+    ids: number[],
+): Promise<CatalogItem[]> {
+    if (ids.length === 0) {
+        return [];
+    }
+
+    const response =
+        await fetch(
+            `${API_URL}/catalog/by-ids?ids=${ids.join(',')}`,
+        );
+
+    if (!response.ok) {
+        throw new Error(
+            'Impossible de charger les œuvres',
         );
     }
 

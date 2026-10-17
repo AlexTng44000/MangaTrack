@@ -5,11 +5,11 @@ import {
 
 import {
     deleteLibraryEntry,
-    getCatalog,
     getLibrary,
     updateLibraryFavorite,
     updateLibraryStatus,
     updateProgress,
+    getCatalogByIds,
 } from '../api/mangatrack.api';
 
 import type {
@@ -33,39 +33,110 @@ export function LibraryPage() {
         useState(true);
 
     useEffect(() => {
-        Promise.all([
-            getLibrary(),
-            getCatalog(),
-        ])
-            .then(([libraryData, catalogData]) => {
-                setLibrary(libraryData);
-                setCatalog(catalogData.items);
-            })
-            .finally(() => {
+        async function loadLibrary() {
+            try {
+                const libraryData =
+                    await getLibrary();
+
+                const catalogIds =
+                    libraryData.map(
+                        (entry) =>
+                            entry.catalogItemId,
+                    );
+
+                const catalogData =
+                    await getCatalogByIds(
+                        catalogIds,
+                    );
+
+                setLibrary(
+                    libraryData,
+                );
+
+                setCatalog(
+                    catalogData,
+                );
+            } finally {
                 setLoading(false);
-            });
+            }
+        }
+
+        loadLibrary();
     }, []);
 
     async function changeProgress(
         entry: LibraryEntry,
+        work: CatalogItem | undefined,
         value: number,
     ) {
-        const newProgress =
-            Math.max(0, entry.progress + value);
+        let newProgress =
+            Math.max(
+                0,
+                entry.progress + value,
+            );
+
+        if (work?.total != null) {
+            newProgress =
+                Math.min(
+                    newProgress,
+                    work.total,
+                );
+        }
 
         try {
-            const updated =
+            let updated =
                 await updateProgress(
                     entry.id,
                     newProgress,
                 );
 
-            setLibrary((current) =>
-                current.map((item) =>
-                    item.id === updated.id
-                        ? updated
-                        : item,
-                ),
+            let newStatus =
+                entry.status;
+
+            // On ne modifie pas automatiquement
+            // un statut "abandonné".
+            if (
+                entry.status !==
+                'abandonne'
+            ) {
+                if (
+                    work?.total != null &&
+                    newProgress ===
+                    work.total
+                ) {
+                    newStatus =
+                        'termine';
+                } else if (
+                    newProgress === 0
+                ) {
+                    newStatus =
+                        'a_commencer';
+                } else {
+                    newStatus =
+                        'en_cours';
+                }
+            }
+
+            if (
+                newStatus !==
+                entry.status
+            ) {
+                updated =
+                    await updateLibraryStatus(
+                        entry.id,
+                        newStatus,
+                    );
+            }
+
+            setLibrary(
+                (current) =>
+                    current.map(
+                        (item) =>
+                            item.id ===
+                                updated.id
+                                ? updated
+                                : item,
+                    ),
             );
         } catch {
             alert(
@@ -173,13 +244,26 @@ export function LibraryPage() {
                             </label>
 
                             <p>
-                                Progression : {entry.progress}
+                                {work?.type === 'anime'
+                                    ? 'Épisodes vus'
+                                    : work?.type === 'manga'
+                                        ? 'Chapitres lus'
+                                        : 'Progression'}
+                                {' : '}
+                                {entry.progress}
+
+                                {work?.total != null &&
+                                    ` / ${work.total}`}
                             </p>
 
                             <div className="progress-actions">
                                 <button
                                     onClick={() =>
-                                        changeProgress(entry, -1)
+                                        changeProgress(
+                                            entry,
+                                            work,
+                                            -1,
+                                        )
                                     }
                                     disabled={
                                         entry.progress === 0
@@ -201,7 +285,16 @@ export function LibraryPage() {
 
                                 <button
                                     onClick={() =>
-                                        changeProgress(entry, 1)
+                                        changeProgress(
+                                            entry,
+                                            work,
+                                            1,
+                                        )
+                                    }
+                                    disabled={
+                                        work?.total != null &&
+                                        entry.progress >=
+                                        work.total
                                     }
                                 >
                                     +

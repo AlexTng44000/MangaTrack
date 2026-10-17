@@ -96,5 +96,40 @@ export function createCatalogRouter(
         },
     );
 
+    router.get(
+        '/by-ids',
+        async (req, res) => {
+            const rawIds =
+                typeof req.query.ids ===
+                    'string'
+                    ? req.query.ids
+                    : '';
+
+            const ids =
+                rawIds
+                    .split(',')
+                    .map(
+                        (value) =>
+                            Number(value),
+                    )
+                    .filter(
+                        (id) =>
+                            Number.isInteger(id) &&
+                            id > 0,
+                    );
+
+            if (ids.length === 0) {
+                return res.json([]);
+            }
+
+            const items =
+                await catalogService.getByIds(
+                    ids,
+                );
+
+            return res.json(items);
+        },
+    );
+
     return router;
 }
