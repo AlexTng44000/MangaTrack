@@ -140,4 +140,27 @@ export class PostgresLibraryRepository
 
         return result.rows[0];
     }
+
+    async delete(
+        id: number,
+        userId: number,
+    ): Promise<boolean> {
+        const result =
+            await this.db.query(
+                `
+                DELETE FROM library_entries
+                WHERE id = $1
+                AND user_id = $2
+                `,
+                [
+                    id,
+                    userId,
+                ],
+            );
+
+        return (
+            result.rowCount !== null &&
+            result.rowCount > 0
+        );
+    }
 }

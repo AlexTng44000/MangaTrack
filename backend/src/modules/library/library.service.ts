@@ -51,4 +51,21 @@ export class LibraryService {
             progress,
         );
     }
+
+    async delete(
+        id: number,
+        userId: number,
+    ): Promise<void> {
+        const deleted =
+            await this.repository.delete(
+                id,
+                userId,
+            );
+
+        if (!deleted) {
+            throw new Error(
+                'LIBRARY_ENTRY_NOT_FOUND',
+            );
+        }
+    }
 }

@@ -229,3 +229,21 @@ export async function getAdminUsers():
 
     return response.json();
 }
+
+export async function deleteLibraryEntry(
+    id: number,
+): Promise<void> {
+    const response =
+        await authenticatedFetch(
+            `${API_URL}/library/${id}`,
+            {
+                method: 'DELETE',
+            },
+        );
+
+    if (!response.ok) {
+        throw new Error(
+            'Impossible de supprimer cette œuvre',
+        );
+    }
+}

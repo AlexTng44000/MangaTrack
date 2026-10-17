@@ -4,6 +4,7 @@ import {
 } from 'react';
 
 import {
+    deleteLibraryEntry,
     getCatalog,
     getLibrary,
     updateProgress,
@@ -125,7 +126,14 @@ export function LibraryPage() {
                                 >
                                     −
                                 </button>
-
+                                <button
+                                    type="button"
+                                    onClick={() =>
+                                        handleDelete(entry.id)
+                                    }
+                                >
+                                    Supprimer
+                                </button>
                                 <strong>
                                     {entry.progress}
                                 </strong>
@@ -144,4 +152,23 @@ export function LibraryPage() {
             </div>
         </main>
     );
+    async function handleDelete(
+        id: number,
+    ) {
+        try {
+            await deleteLibraryEntry(id);
+
+            setLibrary(
+                (currentLibrary) =>
+                    currentLibrary.filter(
+                        (entry) =>
+                            entry.id !== id,
+                    ),
+            );
+        } catch {
+            alert(
+                'Impossible de supprimer cette œuvre.',
+            );
+        }
+    }
 }

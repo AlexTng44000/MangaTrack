@@ -23,4 +23,9 @@ export interface LibraryRepository {
         userId: number,
         progress: number,
     ): Promise<LibraryEntry | undefined>;
+
+    delete(
+        id: number,
+        userId: number,
+    ): Promise<boolean>;
 }

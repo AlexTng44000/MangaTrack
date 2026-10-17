@@ -77,5 +77,46 @@ export function createLibraryRouter(
         },
     );
 
+    router.delete(
+        '/:id',
+        requireAuth,
+        async (req, res) => {
+            const id =
+                Number(req.params.id);
+
+            if (
+                !Number.isInteger(id) ||
+                id < 1
+            ) {
+                return res.status(400).json({
+                    error:
+                        'Identifiant invalide',
+                });
+            }
+
+            try {
+                await libraryService.delete(
+                    id,
+                    req.auth!.userId,
+                );
+
+                return res.status(204).send();
+            } catch (error) {
+                if (
+                    error instanceof Error &&
+                    error.message ===
+                    'LIBRARY_ENTRY_NOT_FOUND'
+                ) {
+                    return res.status(404).json({
+                        error:
+                            'Œuvre introuvable dans la bibliothèque',
+                    });
+                }
+
+                throw error;
+            }
+        },
+    );
+
     return router;
 }
