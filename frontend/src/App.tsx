@@ -3,6 +3,13 @@ import {
 } from 'react';
 
 import {
+  Navigate,
+  Route,
+  Routes,
+  useNavigate,
+} from 'react-router-dom';
+
+import {
   CatalogPage,
 } from './pages/CatalogPage';
 
@@ -33,20 +40,14 @@ import type {
 
 import './App.css';
 
-type Page =
-  | 'catalog'
-  | 'library'
-  | 'reminders'
-  | 'admin';
-
 function App() {
   const [user, setUser] =
     useState<AuthUser | null>(
       getCurrentUser(),
     );
 
-  const [page, setPage] =
-    useState<Page>('catalog');
+  const navigate =
+    useNavigate();
 
   if (!user) {
     return (
@@ -77,7 +78,7 @@ function App() {
         <nav>
           <button
             onClick={() =>
-              setPage('catalog')
+              navigate('/catalog')
             }
           >
             Catalogue
@@ -85,7 +86,7 @@ function App() {
 
           <button
             onClick={() =>
-              setPage('library')
+              navigate('/library')
             }
           >
             Ma bibliothèque
@@ -93,7 +94,7 @@ function App() {
 
           <button
             onClick={() =>
-              setPage('reminders')
+              navigate('/reminders')
             }
           >
             Rappels
@@ -102,7 +103,7 @@ function App() {
           {user.role === 'admin' && (
             <button
               onClick={() =>
-                setPage('admin')
+                navigate('/admin')
               }
             >
               Administration
@@ -113,7 +114,9 @@ function App() {
             onClick={() => {
               logout();
               setUser(null);
-              setPage('catalog');
+              navigate(
+                '/catalog',
+              );
             }}
           >
             Déconnexion
@@ -121,22 +124,47 @@ function App() {
         </nav>
       </header>
 
-      {page === 'catalog' && (
-        <CatalogPage />
-      )}
+      <Routes>
+        <Route
+          path="/catalog"
+          element={
+            <CatalogPage />
+          }
+        />
 
-      {page === 'library' && (
-        <LibraryPage />
-      )}
+        <Route
+          path="/library"
+          element={
+            <LibraryPage />
+          }
+        />
 
-      {page === 'reminders' && (
-        <RemindersPage />
-      )}
+        <Route
+          path="/reminders"
+          element={
+            <RemindersPage />
+          }
+        />
 
-      {page === 'admin' &&
-        user.role === 'admin' && (
-          <AdminPage />
+        {user.role === 'admin' && (
+          <Route
+            path="/admin"
+            element={
+              <AdminPage />
+            }
+          />
         )}
+
+        <Route
+          path="*"
+          element={
+            <Navigate
+              to="/catalog"
+              replace
+            />
+          }
+        />
+      </Routes>
     </>
   );
 }
