@@ -4537,3 +4537,96 @@ body {
 
   border-radius: 12px;
 }
+
+/* ===== Fiche œuvre : relations / adaptations ===== */
+
+.relations-section h3 {
+  color: #21182f;
+}
+
+.relations-section>p {
+  color: #706879;
+}
+
+/* Carte relation */
+.relation-card {
+  border: 1px solid rgba(139, 92, 246, 0.18);
+  background:
+    linear-gradient(145deg,
+      #3c3448 0%,
+      #2b2535 100%);
+  box-shadow:
+    0 14px 28px rgba(40, 28, 55, 0.16);
+}
+
+/* Adaptation mise en avant */
+.relation-card-highlight {
+  border: 1px solid rgba(168, 85, 247, 0.5);
+  background:
+    linear-gradient(145deg,
+      #443750 0%,
+      #2d2638 100%);
+}
+
+.relation-cover {
+  box-shadow:
+    0 8px 20px rgba(0, 0, 0, 0.25);
+}
+
+.relation-content .media-type {
+  color: #cfc5d8;
+}
+
+.relation-content h4 {
+  color: #ffffff;
+}
+
+.relation-content p {
+  color: #bfb5c8;
+}
+
+.relation-content .relation-adaptation {
+  color: #d8b4fe;
+  font-weight: 800;
+}
+
+.relation-content button {
+  border: 1px solid rgba(168, 85, 247, 0.26);
+  background: rgba(139, 92, 246, 0.11);
+  color: #f3e8ff;
+}
+
+.relation-content button:hover:not(:disabled) {
+  border-color: rgba(192, 132, 252, 0.48);
+  background: rgba(139, 92, 246, 0.2);
+}
+
+.back-button {
+  min-height: 38px !important;
+  padding: 8px 14px !important;
+
+  border: 1px solid rgba(124, 58, 237, 0.18) !important;
+  border-radius: 10px !important;
+
+  background: rgba(45, 36, 57, 0.94) !important;
+  color: #f5f1ff !important;
+
+  font-weight: 700;
+  box-shadow:
+    0 8px 20px rgba(35, 24, 48, 0.12);
+
+  transition:
+    background 0.18s ease,
+    border-color 0.18s ease,
+    transform 0.18s ease;
+}
+
+.back-button:hover {
+  transform: translateY(-1px);
+
+  border-color: rgba(168, 85, 247, 0.38) !important;
+
+  background: rgba(60, 47, 75, 0.98) !important;
+
+  color: #ffffff !important;
+}
