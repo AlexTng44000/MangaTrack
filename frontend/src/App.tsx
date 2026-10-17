@@ -22,6 +22,10 @@ import {
 } from './pages/RemindersPage';
 
 import {
+  CalendarPage,
+} from './pages/CalendarPage';
+
+import {
   AdminPage,
 } from './pages/AdminPage';
 
@@ -98,6 +102,14 @@ function App() {
 
           <button
             onClick={() =>
+              navigate('/calendar')
+            }
+          >
+            Calendrier
+          </button>
+
+          <button
+            onClick={() =>
               navigate('/reminders')
             }
           >
@@ -147,6 +159,13 @@ function App() {
           path="/library"
           element={
             <LibraryPage />
+          }
+        />
+
+        <Route
+          path="/calendar"
+          element={
+            <CalendarPage />
           }
         />
 

@@ -1,9 +1,10 @@
 import type {
+    CalendarRelease,
+    CatalogDetails,
     CatalogFilters,
     CatalogItem,
     CatalogPageResult,
     CatalogPort,
-    CatalogDetails,
 } from './catalog.types.js';
 
 export class CatalogService {
@@ -33,6 +34,7 @@ export class CatalogService {
             filters,
         );
     }
+
     async getByIds(
         ids: number[],
     ): Promise<CatalogItem[]> {
@@ -40,10 +42,23 @@ export class CatalogService {
             ids,
         );
     }
+
     async getDetails(
         id: number,
     ): Promise<CatalogDetails | null> {
+        return this.catalogPort.getDetails(
+            id,
+        );
+    }
+
+    async getUpcomingReleases(
+        from: Date,
+        to: Date,
+    ): Promise<CalendarRelease[]> {
         return this.catalogPort
-            .getDetails(id);
+            .getUpcomingReleases(
+                from,
+                to,
+            );
     }
 }

@@ -3,20 +3,13 @@ export interface CatalogItem {
     title: string;
     type: 'anime' | 'manga';
     genres: string[];
+    total?: number | null;
 }
 
 export interface CatalogPageResult {
     items: CatalogItem[];
     page: number;
     hasNextPage: boolean;
-}
-
-export interface CatalogItem {
-    id: number;
-    title: string;
-    type: 'anime' | 'manga';
-    genres: string[];
-    total?: number | null;
 }
 
 export interface CatalogDetails
@@ -27,4 +20,13 @@ export interface CatalogDetails
     format: string | null;
     seasonYear: number | null;
     averageScore: number | null;
+}
+
+export interface CalendarRelease {
+    mediaId: number;
+    title: string;
+    episode: number;
+    airingAt: string;
+    imageUrl: string | null;
+    format: string | null;
 }

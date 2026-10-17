@@ -1,4 +1,5 @@
 import type {
+    CalendarRelease,
     CatalogDetails,
     CatalogFilters,
     CatalogItem,
@@ -40,8 +41,54 @@ interface AniListResponse {
     }>;
 }
 
+interface AniListAiringSchedule {
+    airingAt: number;
+    episode: number;
+
+    media: {
+        id: number;
+
+        title: {
+            english: string | null;
+            romaji: string;
+        };
+
+        coverImage: {
+            large: string | null;
+        };
+
+        format: string | null;
+
+        type:
+        | 'ANIME'
+        | 'MANGA';
+
+        isAdult: boolean;
+    };
+}
+
+interface AniListAiringPage {
+    pageInfo: {
+        hasNextPage: boolean;
+    };
+
+    airingSchedules:
+    AniListAiringSchedule[];
+}
+
+interface AniListAiringResponse {
+    data?: {
+        Page: AniListAiringPage;
+    };
+
+    errors?: Array<{
+        message: string;
+    }>;
+}
+
 export class AniListCatalogAdapter
     implements CatalogPort {
+
     constructor(
         private readonly apiUrl: string,
     ) { }
@@ -78,12 +125,12 @@ export class AniListCatalogAdapter
             search ? 25 : 50;
 
         const query = `
-        query (
-            $page: Int!
-            $perPage: Int!
-            $search: String
-            $genre: String
-        ) {
+            query (
+                $page: Int!
+                $perPage: Int!
+                $search: String
+                $genre: String
+            ) {
                 anime: Page(
                     page: $page
                     perPage: $perPage
@@ -160,10 +207,13 @@ export class AniListCatalogAdapter
                         variables: {
                             page,
                             perPage,
+
                             search:
                                 search || null,
+
                             genre:
-                                filters.genre || null,
+                                filters.genre ||
+                                null,
                         },
                     }),
                 },
@@ -192,62 +242,92 @@ export class AniListCatalogAdapter
             );
         }
 
-        let media: AniListMedia[];
+        let media:
+            AniListMedia[];
 
-        if (filters.type === 'anime') {
-            media =
-                result.data.anime.media;
-        } else if (
-            filters.type === 'manga'
+        if (
+            filters.type ===
+            'anime'
         ) {
             media =
-                result.data.manga.media;
+                result.data
+                    .anime
+                    .media;
+        } else if (
+            filters.type ===
+            'manga'
+        ) {
+            media =
+                result.data
+                    .manga
+                    .media;
         } else {
             media = [
-                ...result.data.anime.media,
-                ...result.data.manga.media,
+                ...result.data
+                    .anime
+                    .media,
+
+                ...result.data
+                    .manga
+                    .media,
             ];
         }
 
         const items =
             media.map(
-                (item): CatalogItem => ({
+                (
+                    item,
+                ): CatalogItem => ({
                     id: item.id,
 
                     title:
-                        item.title.english ??
-                        item.title.romaji,
+                        item.title
+                            .english ??
+                        item.title
+                            .romaji,
 
                     type:
-                        item.type === 'ANIME'
+                        item.type ===
+                            'ANIME'
                             ? 'anime'
                             : 'manga',
 
                     genres:
-                        item.genres ?? [],
+                        item.genres ??
+                        [],
                 }),
             );
 
-        let hasNextPage: boolean;
+        let hasNextPage:
+            boolean;
 
-        if (filters.type === 'anime') {
+        if (
+            filters.type ===
+            'anime'
+        ) {
             hasNextPage =
-                result.data.anime
+                result.data
+                    .anime
                     .pageInfo
                     .hasNextPage;
         } else if (
-            filters.type === 'manga'
+            filters.type ===
+            'manga'
         ) {
             hasNextPage =
-                result.data.manga
+                result.data
+                    .manga
                     .pageInfo
                     .hasNextPage;
         } else {
             hasNextPage =
-                result.data.anime
+                result.data
+                    .anime
                     .pageInfo
                     .hasNextPage ||
-                result.data.manga
+
+                result.data
+                    .manga
                     .pageInfo
                     .hasNextPage;
         }
@@ -258,10 +338,14 @@ export class AniListCatalogAdapter
             hasNextPage,
         };
     }
+
     async getByIds(
         ids: number[],
     ): Promise<CatalogItem[]> {
-        if (ids.length === 0) {
+        if (
+            ids.length ===
+            0
+        ) {
             return [];
         }
 
@@ -276,12 +360,12 @@ export class AniListCatalogAdapter
                         isAdult: false
                     ) {
                         id
-    
+
                         title {
                             english
                             romaji
                         }
-    
+
                         type
                         genres
                         episodes
@@ -307,6 +391,7 @@ export class AniListCatalogAdapter
 
                     body: JSON.stringify({
                         query,
+
                         variables: {
                             ids,
                         },
@@ -336,7 +421,8 @@ export class AniListCatalogAdapter
                 };
 
                 errors?: Array<{
-                    message: string;
+                    message:
+                    string;
                 }>;
             };
 
@@ -351,29 +437,40 @@ export class AniListCatalogAdapter
             );
         }
 
-        return result.data.Page.media.map(
-            (item): CatalogItem => ({
-                id: item.id,
+        return result.data
+            .Page
+            .media
+            .map(
+                (
+                    item,
+                ): CatalogItem => ({
+                    id: item.id,
 
-                title:
-                    item.title.english ??
-                    item.title.romaji,
+                    title:
+                        item.title
+                            .english ??
+                        item.title
+                            .romaji,
 
-                type:
-                    item.type === 'ANIME'
-                        ? 'anime'
-                        : 'manga',
+                    type:
+                        item.type ===
+                            'ANIME'
+                            ? 'anime'
+                            : 'manga',
 
-                genres:
-                    item.genres ?? [],
+                    genres:
+                        item.genres ??
+                        [],
 
-                total:
-                    item.type === 'ANIME'
-                        ? item.episodes
-                        : item.chapters,
-            }),
-        );
+                    total:
+                        item.type ===
+                            'ANIME'
+                            ? item.episodes
+                            : item.chapters,
+                }),
+            );
     }
+
     async getDetails(
         id: number,
     ): Promise<CatalogDetails | null> {
@@ -384,25 +481,25 @@ export class AniListCatalogAdapter
                     isAdult: false
                 ) {
                     id
-    
+
                     title {
                         english
                         romaji
                     }
-    
+
                     type
                     genres
                     episodes
                     chapters
-    
+
                     description(
                         asHtml: false
                     )
-    
+
                     coverImage {
                         large
                     }
-    
+
                     status
                     format
                     seasonYear
@@ -420,12 +517,14 @@ export class AniListCatalogAdapter
                     headers: {
                         'Content-Type':
                             'application/json',
+
                         Accept:
                             'application/json',
                     },
 
                     body: JSON.stringify({
                         query,
+
                         variables: {
                             id,
                         },
@@ -452,15 +551,19 @@ export class AniListCatalogAdapter
                         id: number;
 
                         title: {
-                            english: string | null;
-                            romaji: string;
+                            english:
+                            string | null;
+
+                            romaji:
+                            string;
                         };
 
                         type:
                         | 'ANIME'
                         | 'MANGA';
 
-                        genres: string[];
+                        genres:
+                        string[];
 
                         episodes:
                         number | null;
@@ -491,7 +594,8 @@ export class AniListCatalogAdapter
                 };
 
                 errors?: Array<{
-                    message: string;
+                    message:
+                    string;
                 }>;
             };
 
@@ -517,19 +621,24 @@ export class AniListCatalogAdapter
             id: item.id,
 
             title:
-                item.title.english ??
-                item.title.romaji,
+                item.title
+                    .english ??
+                item.title
+                    .romaji,
 
             type:
-                item.type === 'ANIME'
+                item.type ===
+                    'ANIME'
                     ? 'anime'
                     : 'manga',
 
             genres:
-                item.genres ?? [],
+                item.genres ??
+                [],
 
             total:
-                item.type === 'ANIME'
+                item.type ===
+                    'ANIME'
                     ? item.episodes
                     : item.chapters,
 
@@ -537,7 +646,8 @@ export class AniListCatalogAdapter
                 item.description,
 
             imageUrl:
-                item.coverImage.large,
+                item.coverImage
+                    .large,
 
             status:
                 item.status,
@@ -551,5 +661,206 @@ export class AniListCatalogAdapter
             averageScore:
                 item.averageScore,
         };
+    }
+
+    async getUpcomingReleases(
+        from: Date,
+        to: Date,
+    ): Promise<CalendarRelease[]> {
+        const query = `
+            query (
+                $page: Int!
+                $perPage: Int!
+                $airingAtGreater: Int!
+                $airingAtLesser: Int!
+            ) {
+                Page(
+                    page: $page
+                    perPage: $perPage
+                ) {
+                    pageInfo {
+                        hasNextPage
+                    }
+
+                    airingSchedules(
+                        airingAt_greater:
+                            $airingAtGreater
+
+                        airingAt_lesser:
+                            $airingAtLesser
+
+                        sort: TIME
+                    ) {
+                        airingAt
+                        episode
+
+                        media {
+                            id
+
+                            title {
+                                english
+                                romaji
+                            }
+
+                            coverImage {
+                                large
+                            }
+
+                            format
+                            type
+                            isAdult
+                        }
+                    }
+                }
+            }
+        `;
+
+        const fromTimestamp =
+            Math.floor(
+                from.getTime() /
+                1000,
+            );
+
+        const toTimestamp =
+            Math.floor(
+                to.getTime() /
+                1000,
+            );
+
+        const releases:
+            CalendarRelease[] = [];
+
+        let page = 1;
+        let hasNextPage = true;
+
+        while (hasNextPage) {
+            const response =
+                await fetch(
+                    this.apiUrl,
+                    {
+                        method:
+                            'POST',
+
+                        headers: {
+                            'Content-Type':
+                                'application/json',
+
+                            Accept:
+                                'application/json',
+                        },
+
+                        body:
+                            JSON.stringify({
+                                query,
+
+                                variables: {
+                                    page,
+
+                                    perPage:
+                                        50,
+
+                                    airingAtGreater:
+                                        fromTimestamp,
+
+                                    airingAtLesser:
+                                        toTimestamp,
+                                },
+                            }),
+                    },
+                );
+
+            if (!response.ok) {
+                const errorBody =
+                    await response.text();
+
+                throw new Error(
+                    `AniList API error: ${response.status} - ${errorBody}`,
+                );
+            }
+
+            const rawResult =
+                await response.json();
+
+            const result =
+                rawResult as
+                AniListAiringResponse;
+
+            if (
+                result.errors ||
+                !result.data
+            ) {
+                throw new Error(
+                    result.errors?.[0]
+                        ?.message ??
+                    'Réponse AniList invalide',
+                );
+            }
+
+            for (
+                const schedule
+                of result.data
+                    .Page
+                    .airingSchedules
+            ) {
+                if (
+                    schedule.media
+                        .isAdult ||
+                    schedule.media
+                        .type !==
+                    'ANIME'
+                ) {
+                    continue;
+                }
+
+                releases.push({
+                    mediaId:
+                        schedule.media.id,
+
+                    title:
+                        schedule.media
+                            .title
+                            .english ??
+                        schedule.media
+                            .title
+                            .romaji,
+
+                    episode:
+                        schedule.episode,
+
+                    airingAt:
+                        new Date(
+                            schedule.airingAt *
+                            1000,
+                        ).toISOString(),
+
+                    imageUrl:
+                        schedule.media
+                            .coverImage
+                            .large,
+
+                    format:
+                        schedule.media
+                            .format,
+                });
+            }
+
+            hasNextPage =
+                result.data
+                    .Page
+                    .pageInfo
+                    .hasNextPage;
+
+            page += 1;
+        }
+
+        return releases.sort(
+            (first, second) =>
+                new Date(
+                    first.airingAt,
+                ).getTime() -
+                new Date(
+                    second.airingAt,
+                ).getTime(),
+        );
     }
 }

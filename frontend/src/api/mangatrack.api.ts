@@ -1,4 +1,5 @@
 import type {
+    CalendarRelease,
     CatalogPageResult,
     CatalogItem,
     CatalogDetails,
@@ -17,6 +18,7 @@ import {
 const API_URL =
     import.meta.env.VITE_API_URL ??
     'http://localhost:3000';
+
 async function authenticatedFetch(
     url: string,
     options: RequestInit = {},
@@ -110,6 +112,49 @@ export async function getCatalog(
     if (!response.ok) {
         throw new Error(
             'Impossible de charger le catalogue',
+        );
+    }
+
+    return response.json();
+}
+
+export async function getCalendarReleases(
+    from?: string,
+    to?: string,
+): Promise<CalendarRelease[]> {
+    const params =
+        new URLSearchParams();
+
+    if (from) {
+        params.set(
+            'from',
+            from,
+        );
+    }
+
+    if (to) {
+        params.set(
+            'to',
+            to,
+        );
+    }
+
+    const query =
+        params.toString();
+
+    const url =
+        query
+            ? `${API_URL}/catalog/calendar?${query}`
+            : `${API_URL}/catalog/calendar`;
+
+    const response =
+        await fetch(
+            url,
+        );
+
+    if (!response.ok) {
+        throw new Error(
+            'Impossible de charger le calendrier',
         );
     }
 

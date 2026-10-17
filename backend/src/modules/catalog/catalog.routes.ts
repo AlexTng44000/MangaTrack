@@ -14,7 +14,8 @@ import type {
 export function createCatalogRouter(
     catalogService: CatalogService,
 ): Router {
-    const router = Router();
+    const router =
+        Router();
 
     router.get(
         '/',
@@ -28,7 +29,9 @@ export function createCatalogRouter(
             const rawPage =
                 typeof req.query.page ===
                     'string'
-                    ? Number(req.query.page)
+                    ? Number(
+                        req.query.page,
+                    )
                     : 1;
 
             const rawType =
@@ -36,7 +39,9 @@ export function createCatalogRouter(
                     'string'
                     ? req.query.type
                     : undefined;
-            const type: MediaType | undefined =
+
+            const type:
+                MediaType | undefined =
                 rawType === 'anime' ||
                     rawType === 'manga'
                     ? rawType
@@ -47,10 +52,12 @@ export function createCatalogRouter(
                 rawType !== 'anime' &&
                 rawType !== 'manga'
             ) {
-                return res.status(400).json({
-                    error:
-                        'Le type doit être anime ou manga',
-                });
+                return res
+                    .status(400)
+                    .json({
+                        error:
+                            'Le type doit être anime ou manga',
+                    });
             }
 
             const genre =
@@ -59,20 +66,27 @@ export function createCatalogRouter(
                     ? req.query.genre.trim()
                     : undefined;
 
-            const filters: CatalogFilters = {
+            const filters:
+                CatalogFilters = {
                 type,
+
                 genre:
-                    genre || undefined,
+                    genre ||
+                    undefined,
             };
 
             if (
-                !Number.isInteger(rawPage) ||
+                !Number.isInteger(
+                    rawPage,
+                ) ||
                 rawPage < 1
             ) {
-                return res.status(400).json({
-                    error:
-                        'Le numéro de page doit être un entier supérieur ou égal à 1',
-                });
+                return res
+                    .status(400)
+                    .json({
+                        error:
+                            'Le numéro de page doit être un entier supérieur ou égal à 1',
+                    });
             }
 
             if (search) {
@@ -83,7 +97,9 @@ export function createCatalogRouter(
                         filters,
                     );
 
-                return res.json(result);
+                return res.json(
+                    result,
+                );
             }
 
             const result =
@@ -92,7 +108,9 @@ export function createCatalogRouter(
                     filters,
                 );
 
-            return res.json(result);
+            return res.json(
+                result,
+            );
         },
     );
 
@@ -110,16 +128,25 @@ export function createCatalogRouter(
                     .split(',')
                     .map(
                         (value) =>
-                            Number(value),
+                            Number(
+                                value,
+                            ),
                     )
                     .filter(
                         (id) =>
-                            Number.isInteger(id) &&
+                            Number.isInteger(
+                                id,
+                            ) &&
                             id > 0,
                     );
 
-            if (ids.length === 0) {
-                return res.json([]);
+            if (
+                ids.length ===
+                0
+            ) {
+                return res.json(
+                    [],
+                );
             }
 
             const items =
@@ -127,17 +154,127 @@ export function createCatalogRouter(
                     ids,
                 );
 
-            return res.json(items);
+            return res.json(
+                items,
+            );
         },
     );
+
+    router.get(
+        '/calendar',
+        async (req, res) => {
+            const now =
+                new Date();
+
+            const defaultTo =
+                new Date(
+                    now.getTime() +
+                    7 *
+                    24 *
+                    60 *
+                    60 *
+                    1000,
+                );
+
+            const rawFrom =
+                typeof req.query.from ===
+                    'string'
+                    ? req.query.from
+                    : undefined;
+
+            const rawTo =
+                typeof req.query.to ===
+                    'string'
+                    ? req.query.to
+                    : undefined;
+
+            const from =
+                rawFrom
+                    ? new Date(
+                        rawFrom,
+                    )
+                    : now;
+
+            const to =
+                rawTo
+                    ? new Date(
+                        rawTo,
+                    )
+                    : defaultTo;
+
+            if (
+                Number.isNaN(
+                    from.getTime(),
+                ) ||
+                Number.isNaN(
+                    to.getTime(),
+                )
+            ) {
+                return res
+                    .status(400)
+                    .json({
+                        error:
+                            'Les dates du calendrier sont invalides',
+                    });
+            }
+
+            if (
+                from.getTime() >=
+                to.getTime()
+            ) {
+                return res
+                    .status(400)
+                    .json({
+                        error:
+                            'La date de fin doit être postérieure à la date de début',
+                    });
+            }
+
+            const maximumRange =
+                31 *
+                24 *
+                60 *
+                60 *
+                1000;
+
+            if (
+                to.getTime() -
+                from.getTime() >
+                maximumRange
+            ) {
+                return res
+                    .status(400)
+                    .json({
+                        error:
+                            'La période du calendrier ne peut pas dépasser 31 jours',
+                    });
+            }
+
+            const releases =
+                await catalogService
+                    .getUpcomingReleases(
+                        from,
+                        to,
+                    );
+
+            return res.json(
+                releases,
+            );
+        },
+    );
+
     router.get(
         '/:id',
         async (req, res) => {
             const id =
-                Number(req.params.id);
+                Number(
+                    req.params.id,
+                );
 
             if (
-                !Number.isInteger(id) ||
+                !Number.isInteger(
+                    id,
+                ) ||
                 id < 1
             ) {
                 return res
@@ -150,7 +287,9 @@ export function createCatalogRouter(
 
             const item =
                 await catalogService
-                    .getDetails(id);
+                    .getDetails(
+                        id,
+                    );
 
             if (!item) {
                 return res
@@ -161,7 +300,9 @@ export function createCatalogRouter(
                     });
             }
 
-            return res.json(item);
+            return res.json(
+                item,
+            );
         },
     );
 

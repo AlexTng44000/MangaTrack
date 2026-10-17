@@ -1,9 +1,10 @@
 import type {
-    CatalogFilters,
-    CatalogPageResult,
-    CatalogItem,
-    CatalogPort,
+    CalendarRelease,
     CatalogDetails,
+    CatalogFilters,
+    CatalogItem,
+    CatalogPageResult,
+    CatalogPort,
 } from '../../modules/catalog/catalog.types.js';
 
 import type {
@@ -12,6 +13,7 @@ import type {
 
 export class CachedCatalogAdapter
     implements CatalogPort {
+
     private readonly freshTtl =
         15 * 60;
 
@@ -28,7 +30,8 @@ export class CachedCatalogAdapter
 
     async getAll(
         page = 1,
-        filters: CatalogFilters = {},
+        filters:
+            CatalogFilters = {},
     ): Promise<CatalogPageResult> {
         return this.getWithCache(
             undefined,
@@ -40,7 +43,8 @@ export class CachedCatalogAdapter
     async search(
         query: string,
         page = 1,
-        filters: CatalogFilters = {},
+        filters:
+            CatalogFilters = {},
     ): Promise<CatalogPageResult> {
         return this.getWithCache(
             query,
@@ -50,9 +54,11 @@ export class CachedCatalogAdapter
     }
 
     private async getWithCache(
-        search: string | undefined,
+        search:
+            string | undefined,
         page: number,
-        filters: CatalogFilters,
+        filters:
+            CatalogFilters,
     ): Promise<CatalogPageResult> {
         const baseKey =
             this.buildKey(
@@ -92,7 +98,9 @@ export class CachedCatalogAdapter
                     );
 
             const serialized =
-                JSON.stringify(result);
+                JSON.stringify(
+                    result,
+                );
 
             await Promise.all([
                 this.redis.set(
@@ -132,9 +140,11 @@ export class CachedCatalogAdapter
     }
 
     private buildKey(
-        search: string | undefined,
+        search:
+            string | undefined,
         page: number,
-        filters: CatalogFilters,
+        filters:
+            CatalogFilters,
     ): string {
         const normalizedSearch =
             search
@@ -156,15 +166,19 @@ export class CachedCatalogAdapter
             'catalog',
             'anilist',
             `page:${page}`,
+
             `search:${encodeURIComponent(
                 normalizedSearch,
             )}`,
+
             `type:${type}`,
+
             `genre:${encodeURIComponent(
                 genre,
             )}`,
         ].join(':');
     }
+
     async getByIds(
         ids: number[],
     ): Promise<CatalogItem[]> {
@@ -172,11 +186,23 @@ export class CachedCatalogAdapter
             ids,
         );
     }
+
     async getDetails(
         id: number,
     ): Promise<CatalogDetails | null> {
         return this.source.getDetails(
             id,
         );
+    }
+
+    async getUpcomingReleases(
+        from: Date,
+        to: Date,
+    ): Promise<CalendarRelease[]> {
+        return this.source
+            .getUpcomingReleases(
+                from,
+                to,
+            );
     }
 }
