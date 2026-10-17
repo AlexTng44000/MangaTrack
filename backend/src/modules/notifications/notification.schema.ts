@@ -2,15 +2,6 @@ import { z } from 'zod';
 
 export const createNotificationSchema =
     z.object({
-        userId: z
-            .number()
-            .int()
-            .positive(),
-
-        email: z
-            .string()
-            .email(),
-
         message: z
             .string()
             .trim()

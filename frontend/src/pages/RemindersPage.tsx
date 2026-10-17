@@ -7,8 +7,6 @@ import {
 } from '../api/mangatrack.api';
 
 export function RemindersPage() {
-    const [email, setEmail] =
-        useState('test@mangatrack.local');
 
     const [message, setMessage] =
         useState('');
@@ -40,8 +38,6 @@ export function RemindersPage() {
 
             const result =
                 await createReminder({
-                    userId: 1,
-                    email,
                     message,
                     scheduledAt:
                         scheduledDate.toISOString(),
@@ -72,17 +68,6 @@ export function RemindersPage() {
                 className="reminder-form"
                 onSubmit={handleSubmit}
             >
-                <label>
-                    E-mail
-                    <input
-                        type="email"
-                        value={email}
-                        onChange={(event) =>
-                            setEmail(event.target.value)
-                        }
-                        required
-                    />
-                </label>
 
                 <label>
                     Message

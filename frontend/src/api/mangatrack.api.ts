@@ -6,9 +6,34 @@ import type {
     LibraryEntry,
 } from '../types/library';
 
+import {
+    getToken,
+} from '../auth/auth';
+
 const API_URL =
     import.meta.env.VITE_API_URL ??
     'http://localhost:3000';
+async function authenticatedFetch(
+    url: string,
+    options: RequestInit = {},
+): Promise<Response> {
+    const token = getToken();
+
+    if (!token) {
+        throw new Error(
+            'Authentification requise',
+        );
+    }
+
+    return fetch(url, {
+        ...options,
+        headers: {
+            ...options.headers,
+            Authorization:
+                `Bearer ${token}`,
+        },
+    });
+}
 
 export async function getCatalog():
     Promise<CatalogItem[]> {
@@ -27,20 +52,21 @@ export async function getCatalog():
 export async function addToLibrary(
     catalogItemId: number,
 ) {
-    const response = await fetch(
-        `${API_URL}/library`,
-        {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
+    const response =
+        await authenticatedFetch(
+            `${API_URL}/library`,
+            {
+                method: 'POST',
+                headers: {
+                    'Content-Type':
+                        'application/json',
+                },
+                body: JSON.stringify({
+                    catalogItemId,
+                    status: 'a_commencer',
+                }),
             },
-            body: JSON.stringify({
-                userId: 1,
-                catalogItemId,
-                status: 'a_commencer',
-            }),
-        },
-    );
+        );
 
     if (response.status === 409) {
         throw new Error(
@@ -60,7 +86,9 @@ export async function addToLibrary(
 export async function getLibrary():
     Promise<LibraryEntry[]> {
     const response =
-        await fetch(`${API_URL}/library`);
+        await authenticatedFetch(
+            `${API_URL}/library`,
+        );
 
     if (!response.ok) {
         throw new Error(
@@ -75,18 +103,20 @@ export async function updateProgress(
     libraryEntryId: number,
     progress: number,
 ): Promise<LibraryEntry> {
-    const response = await fetch(
-        `${API_URL}/progress/${libraryEntryId}`,
-        {
-            method: 'PATCH',
-            headers: {
-                'Content-Type': 'application/json',
+    const response =
+        await authenticatedFetch(
+            `${API_URL}/progress/${libraryEntryId}`,
+            {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type':
+                        'application/json',
+                },
+                body: JSON.stringify({
+                    progress,
+                }),
             },
-            body: JSON.stringify({
-                progress,
-            }),
-        },
-    );
+        );
 
     if (!response.ok) {
         throw new Error(
@@ -96,10 +126,7 @@ export async function updateProgress(
 
     return response.json();
 }
-
 export interface CreateReminderInput {
-    userId: number;
-    email: string;
     message: string;
     scheduledAt?: string;
 }
@@ -113,18 +140,22 @@ export interface CreateReminderResult {
 export async function createReminder(
     input: CreateReminderInput,
 ): Promise<CreateReminderResult> {
-    const response = await fetch(
-        `${API_URL}/notifications`,
-        {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
+    const response =
+        await authenticatedFetch(
+            `${API_URL}/notifications`,
+            {
+                method: 'POST',
+                headers: {
+                    'Content-Type':
+                        'application/json',
+                },
+                body:
+                    JSON.stringify(input),
             },
-            body: JSON.stringify(input),
-        },
-    );
+        );
 
-    const data = await response.json();
+    const data =
+        await response.json();
 
     if (!response.ok) {
         throw new Error(

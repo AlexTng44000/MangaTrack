@@ -78,19 +78,20 @@ const progressService =
 const notificationQueue =
     new BullMqNotificationQueueAdapter();
 
+const userRepository =
+    new PostgresUserRepository(db);
+
 const notificationService =
     new NotificationService(
         notificationQueue,
+        userRepository,
     );
-
 const catalogAdapter =
     new FakeCatalogAdapter();
 
 const catalogService =
     new CatalogService(catalogAdapter);
 
-const userRepository =
-    new PostgresUserRepository(db);
 
 const passwordHasher =
     new BcryptAdapter();
@@ -138,7 +139,10 @@ app.use(
 
 app.use(
     '/notifications',
-    createNotificationRouter(notificationService),
+    createNotificationRouter(
+        notificationService,
+        requireAuth,
+    ),
 );
 
 app.use(

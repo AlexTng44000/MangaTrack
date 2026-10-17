@@ -14,8 +14,16 @@ import {
   RemindersPage,
 } from './pages/RemindersPage';
 
-import './App.css';
+import {
+  AuthPage,
+} from './auth/AuthPage';
 
+import {
+  isAuthenticated,
+  logout,
+} from './auth/auth';
+
+import './App.css';
 type Page =
   | 'catalog'
   | 'library'
@@ -24,6 +32,19 @@ type Page =
 function App() {
   const [page, setPage] =
     useState<Page>('catalog');
+  const [authenticated, setAuthenticated] =
+    useState(
+      isAuthenticated(),
+    );
+  if (!authenticated) {
+    return (
+      <AuthPage
+        onAuthenticated={() =>
+          setAuthenticated(true)
+        }
+      />
+    );
+  }
 
   return (
     <>
@@ -37,6 +58,14 @@ function App() {
         </div>
 
         <nav>
+          <button
+            onClick={() => {
+              logout();
+              setAuthenticated(false);
+            }}
+          >
+            Déconnexion
+          </button>
           <button
             onClick={() =>
               setPage('catalog')

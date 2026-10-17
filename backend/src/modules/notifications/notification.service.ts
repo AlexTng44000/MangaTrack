@@ -6,29 +6,55 @@ import type {
     CreateNotificationInput,
 } from './notification.types.js';
 
+import type {
+    UserRepository,
+} from '../users/user.repository.js';
+
 export class NotificationService {
     constructor(
         private readonly queue:
             NotificationQueuePort,
+
+        private readonly users:
+            UserRepository,
     ) { }
 
     async createReminder(
+        userId: number,
         input: CreateNotificationInput,
     ) {
+        const user =
+            await this.users.findById(
+                userId,
+            );
+
+        if (!user) {
+            throw new Error(
+                'USER_NOT_FOUND',
+            );
+        }
+
         let delay = 0;
 
         if (input.scheduledAt) {
             const scheduledTimestamp =
-                Date.parse(input.scheduledAt);
+                Date.parse(
+                    input.scheduledAt,
+                );
 
-            if (Number.isNaN(scheduledTimestamp)) {
+            if (
+                Number.isNaN(
+                    scheduledTimestamp,
+                )
+            ) {
                 throw new Error(
                     'scheduledAt doit être une date valide',
                 );
             }
 
             delay =
-                scheduledTimestamp - Date.now();
+                scheduledTimestamp -
+                Date.now();
 
             if (delay <= 0) {
                 throw new Error(
@@ -39,16 +65,26 @@ export class NotificationService {
 
         const jobId =
             await this.queue.enqueue(
-                input,
+                {
+                    userId,
+                    email: user.email,
+                    message:
+                        input.message,
+                    scheduledAt:
+                        input.scheduledAt,
+                },
                 delay,
             );
 
         return {
             jobId,
             status:
-                delay > 0 ? 'scheduled' : 'queued',
+                delay > 0
+                    ? 'scheduled'
+                    : 'queued',
             scheduledAt:
-                input.scheduledAt ?? null,
+                input.scheduledAt ??
+                null,
         };
     }
 }
