@@ -1,5 +1,5 @@
 import type {
-    CatalogItem,
+    CatalogPageResult,
 } from '../types/catalog';
 
 import type {
@@ -35,10 +35,32 @@ async function authenticatedFetch(
     });
 }
 
-export async function getCatalog():
-    Promise<CatalogItem[]> {
+export async function getCatalog(
+    search?: string,
+    page = 1,
+): Promise<CatalogPageResult> {
+    const params =
+        new URLSearchParams();
+
+    params.set(
+        'page',
+        String(page),
+    );
+
+    if (
+        search &&
+        search.trim()
+    ) {
+        params.set(
+            'search',
+            search.trim(),
+        );
+    }
+
     const response =
-        await fetch(`${API_URL}/catalog`);
+        await fetch(
+            `${API_URL}/catalog?${params.toString()}`,
+        );
 
     if (!response.ok) {
         throw new Error(

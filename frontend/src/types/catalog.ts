@@ -4,3 +4,9 @@ export interface CatalogItem {
     type: 'anime' | 'manga';
     genres: string[];
 }
+
+export interface CatalogPageResult {
+    items: CatalogItem[];
+    page: number;
+    hasNextPage: boolean;
+}

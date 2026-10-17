@@ -1,5 +1,5 @@
 import type {
-    CatalogItem,
+    CatalogPageResult,
     CatalogPort,
 } from '../../modules/catalog/catalog.types.js';
 
@@ -23,8 +23,17 @@ export class CachedCatalogAdapter
             Redis,
     ) { }
 
-    async getAll():
-        Promise<CatalogItem[]> {
+    async getAll(
+        page = 1,
+    ): Promise<CatalogPageResult> {
+        // Pour le moment les pages suivantes
+        // vont directement vers AniList.
+        if (page !== 1) {
+            return this.source.getAll(
+                page,
+            );
+        }
+
         const fresh =
             await this.redis.get(
                 this.freshKey,
@@ -33,15 +42,17 @@ export class CachedCatalogAdapter
         if (fresh) {
             return JSON.parse(
                 fresh,
-            ) as CatalogItem[];
+            ) as CatalogPageResult;
         }
 
         try {
-            const items =
-                await this.source.getAll();
+            const result =
+                await this.source.getAll(
+                    1,
+                );
 
             const serialized =
-                JSON.stringify(items);
+                JSON.stringify(result);
 
             await this.redis.set(
                 this.freshKey,
@@ -57,7 +68,7 @@ export class CachedCatalogAdapter
                 24 * 60 * 60,
             );
 
-            return items;
+            return result;
         } catch (error) {
             const stale =
                 await this.redis.get(
@@ -71,10 +82,20 @@ export class CachedCatalogAdapter
 
                 return JSON.parse(
                     stale,
-                ) as CatalogItem[];
+                ) as CatalogPageResult;
             }
 
             throw error;
         }
+    }
+
+    async search(
+        query: string,
+        page = 1,
+    ): Promise<CatalogPageResult> {
+        return this.source.search(
+            query,
+            page,
+        );
     }
 }

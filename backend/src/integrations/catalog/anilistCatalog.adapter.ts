@@ -1,5 +1,6 @@
 import type {
     CatalogItem,
+    CatalogPageResult,
     CatalogPort,
 } from '../../modules/catalog/catalog.types.js';
 
@@ -12,19 +13,21 @@ interface AniListMedia {
     };
 
     type: 'ANIME' | 'MANGA';
-
     genres: string[];
+}
+
+interface AniListPage {
+    pageInfo: {
+        hasNextPage: boolean;
+    };
+
+    media: AniListMedia[];
 }
 
 interface AniListResponse {
     data?: {
-        anime: {
-            media: AniListMedia[];
-        };
-
-        manga: {
-            media: AniListMedia[];
-        };
+        anime: AniListPage;
+        manga: AniListPage;
     };
 
     errors?: Array<{
@@ -38,17 +41,49 @@ export class AniListCatalogAdapter
         private readonly apiUrl: string,
     ) { }
 
-    async getAll():
-        Promise<CatalogItem[]> {
+    async getAll(
+        page = 1,
+    ): Promise<CatalogPageResult> {
+        return this.fetchPage(
+            page,
+        );
+    }
+
+    async search(
+        search: string,
+        page = 1,
+    ): Promise<CatalogPageResult> {
+        return this.fetchPage(
+            page,
+            search,
+        );
+    }
+
+    private async fetchPage(
+        page: number,
+        search?: string,
+    ): Promise<CatalogPageResult> {
+        const perPage =
+            search ? 25 : 50;
+
         const query = `
-            query {
+            query (
+                $page: Int!
+                $perPage: Int!
+                $search: String
+            ) {
                 anime: Page(
-                    page: 1
-                    perPage: 10
+                    page: $page
+                    perPage: $perPage
                 ) {
+                    pageInfo {
+                        hasNextPage
+                    }
+
                     media(
                         type: ANIME
                         isAdult: false
+                        search: $search
                         sort: [POPULARITY_DESC]
                     ) {
                         id
@@ -64,12 +99,17 @@ export class AniListCatalogAdapter
                 }
 
                 manga: Page(
-                    page: 1
-                    perPage: 10
+                    page: $page
+                    perPage: $perPage
                 ) {
+                    pageInfo {
+                        hasNextPage
+                    }
+
                     media(
                         type: MANGA
                         isAdult: false
+                        search: $search
                         sort: [POPULARITY_DESC]
                     ) {
                         id
@@ -102,6 +142,13 @@ export class AniListCatalogAdapter
 
                     body: JSON.stringify({
                         query,
+
+                        variables: {
+                            page,
+                            perPage,
+                            search:
+                                search || null,
+                        },
                     }),
                 },
             );
@@ -112,8 +159,11 @@ export class AniListCatalogAdapter
             );
         }
 
+        const rawResult =
+            await response.json();
+
         const result =
-            (await response.json()) as AniListResponse;
+            rawResult as AniListResponse;
 
         if (
             result.errors ||
@@ -131,22 +181,36 @@ export class AniListCatalogAdapter
             ...result.data.manga.media,
         ];
 
-        return media.map(
-            (item): CatalogItem => ({
-                id: item.id,
+        const items =
+            media.map(
+                (item): CatalogItem => ({
+                    id: item.id,
 
-                title:
-                    item.title.english ??
-                    item.title.romaji,
+                    title:
+                        item.title.english ??
+                        item.title.romaji,
 
-                type:
-                    item.type === 'ANIME'
-                        ? 'anime'
-                        : 'manga',
+                    type:
+                        item.type === 'ANIME'
+                            ? 'anime'
+                            : 'manga',
 
-                genres:
-                    item.genres ?? [],
-            }),
-        );
+                    genres:
+                        item.genres ?? [],
+                }),
+            );
+
+        return {
+            items,
+            page,
+
+            hasNextPage:
+                result.data.anime
+                    .pageInfo
+                    .hasNextPage ||
+                result.data.manga
+                    .pageInfo
+                    .hasNextPage,
+        };
     }
 }

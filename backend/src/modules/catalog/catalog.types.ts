@@ -1,4 +1,6 @@
-export type MediaType = 'anime' | 'manga';
+export type MediaType =
+    | 'anime'
+    | 'manga';
 
 export interface CatalogItem {
     id: number;
@@ -7,6 +9,19 @@ export interface CatalogItem {
     genres: string[];
 }
 
+export interface CatalogPageResult {
+    items: CatalogItem[];
+    page: number;
+    hasNextPage: boolean;
+}
+
 export interface CatalogPort {
-    getAll(): Promise<CatalogItem[]>;
+    getAll(
+        page?: number,
+    ): Promise<CatalogPageResult>;
+
+    search(
+        query: string,
+        page?: number,
+    ): Promise<CatalogPageResult>;
 }

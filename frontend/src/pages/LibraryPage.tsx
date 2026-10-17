@@ -41,7 +41,7 @@ export function LibraryPage() {
         ])
             .then(([libraryData, catalogData]) => {
                 setLibrary(libraryData);
-                setCatalog(catalogData);
+                setCatalog(catalogData.items);
             })
             .finally(() => {
                 setLoading(false);
