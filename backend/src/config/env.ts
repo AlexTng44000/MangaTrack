@@ -1,8 +1,13 @@
 import 'dotenv/config';
-import { z } from 'zod';
+
+import {
+    z,
+} from 'zod';
 
 const envSchema = z.object({
-    DATABASE_URL: z.string().url(),
+    DATABASE_URL: z
+        .string()
+        .url(),
 
     JWT_SECRET: z
         .string()
@@ -11,10 +16,19 @@ const envSchema = z.object({
     JWT_EXPIRES_IN: z
         .string()
         .default('1h'),
+
+    ANILIST_API_URL: z
+        .string()
+        .url()
+        .default(
+            'https://graphql.anilist.co',
+        ),
 });
 
 const result =
-    envSchema.safeParse(process.env);
+    envSchema.safeParse(
+        process.env,
+    );
 
 if (!result.success) {
     console.error(

@@ -2,8 +2,12 @@ import express from 'express';
 import cors from 'cors';
 
 import {
-    FakeCatalogAdapter,
-} from './integrations/catalog/fakeCatalog.adapter.js';
+    env,
+} from './config/env.js';
+
+import {
+    AniListCatalogAdapter,
+} from './integrations/catalog/anilistCatalog.adapter.js';
 
 import {
     CatalogService,
@@ -69,6 +73,14 @@ import {
     createAdminRouter,
 } from './modules/users/admin.routes.js';
 
+import {
+    CachedCatalogAdapter,
+} from './integrations/catalog/cachedCatalog.adapter.js';
+
+import {
+    redis,
+} from './infrastructure/redis/redis.client.js';
+
 const app = express();
 const PORT = 3000;
 
@@ -95,8 +107,16 @@ const notificationService =
         notificationQueue,
         userRepository,
     );
+const aniListCatalog =
+    new AniListCatalogAdapter(
+        env.ANILIST_API_URL,
+    );
+
 const catalogAdapter =
-    new FakeCatalogAdapter();
+    new CachedCatalogAdapter(
+        aniListCatalog,
+        redis,
+    );
 
 const catalogService =
     new CatalogService(catalogAdapter);
