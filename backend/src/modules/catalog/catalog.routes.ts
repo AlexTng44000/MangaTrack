@@ -130,6 +130,40 @@ export function createCatalogRouter(
             return res.json(items);
         },
     );
+    router.get(
+        '/:id',
+        async (req, res) => {
+            const id =
+                Number(req.params.id);
+
+            if (
+                !Number.isInteger(id) ||
+                id < 1
+            ) {
+                return res
+                    .status(400)
+                    .json({
+                        error:
+                            'Identifiant invalide',
+                    });
+            }
+
+            const item =
+                await catalogService
+                    .getDetails(id);
+
+            if (!item) {
+                return res
+                    .status(404)
+                    .json({
+                        error:
+                            'Œuvre introuvable',
+                    });
+            }
+
+            return res.json(item);
+        },
+    );
 
     return router;
 }

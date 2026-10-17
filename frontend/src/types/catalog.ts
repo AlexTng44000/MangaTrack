@@ -18,3 +18,13 @@ export interface CatalogItem {
     genres: string[];
     total?: number | null;
 }
+
+export interface CatalogDetails
+    extends CatalogItem {
+    description: string | null;
+    imageUrl: string | null;
+    status: string | null;
+    format: string | null;
+    seasonYear: number | null;
+    averageScore: number | null;
+}

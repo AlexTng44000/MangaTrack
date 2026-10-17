@@ -22,6 +22,9 @@ import type {
     CatalogItem,
 } from '../types/catalog';
 
+import {
+    useNavigate,
+} from 'react-router-dom';
 
 export function LibraryPage() {
     const [library, setLibrary] =
@@ -32,6 +35,9 @@ export function LibraryPage() {
 
     const [loading, setLoading] =
         useState(true);
+
+    const navigate =
+        useNavigate();
 
     useEffect(() => {
         async function loadLibrary() {
@@ -265,6 +271,16 @@ export function LibraryPage() {
                                 {entry.isFavorite
                                     ? '♥ Favori'
                                     : '♡ Ajouter aux favoris'}
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() =>
+                                    navigate(
+                                        `/catalog/${entry.catalogItemId}`,
+                                    )
+                                }
+                            >
+                                Voir la fiche
                             </button>
                             <label>
                                 Statut :{' '}

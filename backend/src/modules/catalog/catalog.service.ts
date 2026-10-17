@@ -3,6 +3,7 @@ import type {
     CatalogItem,
     CatalogPageResult,
     CatalogPort,
+    CatalogDetails,
 } from './catalog.types.js';
 
 export class CatalogService {
@@ -38,5 +39,11 @@ export class CatalogService {
         return this.catalogPort.getByIds(
             ids,
         );
+    }
+    async getDetails(
+        id: number,
+    ): Promise<CatalogDetails | null> {
+        return this.catalogPort
+            .getDetails(id);
     }
 }

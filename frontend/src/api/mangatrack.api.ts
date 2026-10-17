@@ -1,6 +1,7 @@
 import type {
     CatalogPageResult,
     CatalogItem,
+    CatalogDetails,
 } from '../types/catalog';
 
 import type {
@@ -349,6 +350,23 @@ export async function updateLibraryRating(
     if (!response.ok) {
         throw new Error(
             'Impossible de modifier la note',
+        );
+    }
+
+    return response.json();
+}
+
+export async function getCatalogDetails(
+    id: number,
+): Promise<CatalogDetails> {
+    const response =
+        await fetch(
+            `${API_URL}/catalog/${id}`,
+        );
+
+    if (!response.ok) {
+        throw new Error(
+            'Impossible de charger la fiche',
         );
     }
 

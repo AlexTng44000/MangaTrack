@@ -8,6 +8,10 @@ import type {
 } from 'react';
 
 import {
+    useNavigate,
+} from 'react-router-dom';
+
+import {
     addToLibrary,
     getCatalog,
     getLibrary,
@@ -63,6 +67,9 @@ export function CatalogPage() {
 
     const [activeGenre, setActiveGenre] =
         useState('');
+
+    const navigate =
+        useNavigate();
 
     useEffect(() => {
         Promise.all([
@@ -419,6 +426,17 @@ export function CatalogPage() {
                                     ' • ',
                                 )}
                             </p>
+
+                            <button
+                                type="button"
+                                onClick={() =>
+                                    navigate(
+                                        `/catalog/${item.id}`,
+                                    )
+                                }
+                            >
+                                Voir la fiche
+                            </button>
 
                             <button
                                 onClick={() =>

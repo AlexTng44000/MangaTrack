@@ -3,6 +3,7 @@ import type {
     CatalogPageResult,
     CatalogItem,
     CatalogPort,
+    CatalogDetails,
 } from '../../modules/catalog/catalog.types.js';
 
 import type {
@@ -169,6 +170,13 @@ export class CachedCatalogAdapter
     ): Promise<CatalogItem[]> {
         return this.source.getByIds(
             ids,
+        );
+    }
+    async getDetails(
+        id: number,
+    ): Promise<CatalogDetails | null> {
+        return this.source.getDetails(
+            id,
         );
     }
 }

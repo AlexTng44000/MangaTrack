@@ -3,6 +3,7 @@ import type {
     CatalogItem,
     CatalogPageResult,
     CatalogPort,
+    CatalogDetails,
 } from '../../modules/catalog/catalog.types.js';
 
 export class FakeCatalogAdapter
@@ -117,5 +118,28 @@ export class FakeCatalogAdapter
             (item) =>
                 ids.includes(item.id),
         );
+    }
+    async getDetails(
+        id: number,
+    ): Promise<CatalogDetails | null> {
+        const item =
+            this.items.find(
+                (current) =>
+                    current.id === id,
+            );
+
+        if (!item) {
+            return null;
+        }
+
+        return {
+            ...item,
+            description: null,
+            imageUrl: null,
+            status: null,
+            format: null,
+            seasonYear: null,
+            averageScore: null,
+        };
     }
 }

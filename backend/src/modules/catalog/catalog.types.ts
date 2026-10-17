@@ -35,4 +35,17 @@ export interface CatalogPort {
     getByIds(
         ids: number[],
     ): Promise<CatalogItem[]>;
+    getDetails(
+        id: number,
+    ): Promise<CatalogDetails | null>;
+}
+
+export interface CatalogDetails
+    extends CatalogItem {
+    description: string | null;
+    imageUrl: string | null;
+    status: string | null;
+    format: string | null;
+    seasonYear: number | null;
+    averageScore: number | null;
 }

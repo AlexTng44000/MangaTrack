@@ -38,6 +38,10 @@ import type {
   AuthUser,
 } from './auth/auth';
 
+import {
+  WorkDetailsPage,
+} from './pages/WorkDetailsPage';
+
 import './App.css';
 
 function App() {
@@ -129,6 +133,13 @@ function App() {
           path="/catalog"
           element={
             <CatalogPage />
+          }
+        />
+
+        <Route
+          path="/catalog/:id"
+          element={
+            <WorkDetailsPage />
           }
         />
 

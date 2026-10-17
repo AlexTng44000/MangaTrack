@@ -1,4 +1,5 @@
 import type {
+    CatalogDetails,
     CatalogFilters,
     CatalogItem,
     CatalogPageResult,
@@ -372,5 +373,183 @@ export class AniListCatalogAdapter
                         : item.chapters,
             }),
         );
+    }
+    async getDetails(
+        id: number,
+    ): Promise<CatalogDetails | null> {
+        const query = `
+            query ($id: Int!) {
+                Media(
+                    id: $id
+                    isAdult: false
+                ) {
+                    id
+    
+                    title {
+                        english
+                        romaji
+                    }
+    
+                    type
+                    genres
+                    episodes
+                    chapters
+    
+                    description(
+                        asHtml: false
+                    )
+    
+                    coverImage {
+                        large
+                    }
+    
+                    status
+                    format
+                    seasonYear
+                    averageScore
+                }
+            }
+        `;
+
+        const response =
+            await fetch(
+                this.apiUrl,
+                {
+                    method: 'POST',
+
+                    headers: {
+                        'Content-Type':
+                            'application/json',
+                        Accept:
+                            'application/json',
+                    },
+
+                    body: JSON.stringify({
+                        query,
+                        variables: {
+                            id,
+                        },
+                    }),
+                },
+            );
+
+        if (!response.ok) {
+            const errorBody =
+                await response.text();
+
+            throw new Error(
+                `AniList API error: ${response.status} - ${errorBody}`,
+            );
+        }
+
+        const rawResult =
+            await response.json();
+
+        const result =
+            rawResult as {
+                data?: {
+                    Media: {
+                        id: number;
+
+                        title: {
+                            english: string | null;
+                            romaji: string;
+                        };
+
+                        type:
+                        | 'ANIME'
+                        | 'MANGA';
+
+                        genres: string[];
+
+                        episodes:
+                        number | null;
+
+                        chapters:
+                        number | null;
+
+                        description:
+                        string | null;
+
+                        coverImage: {
+                            large:
+                            string | null;
+                        };
+
+                        status:
+                        string | null;
+
+                        format:
+                        string | null;
+
+                        seasonYear:
+                        number | null;
+
+                        averageScore:
+                        number | null;
+                    } | null;
+                };
+
+                errors?: Array<{
+                    message: string;
+                }>;
+            };
+
+        if (
+            result.errors ||
+            !result.data
+        ) {
+            throw new Error(
+                result.errors?.[0]
+                    ?.message ??
+                'Réponse AniList invalide',
+            );
+        }
+
+        const item =
+            result.data.Media;
+
+        if (!item) {
+            return null;
+        }
+
+        return {
+            id: item.id,
+
+            title:
+                item.title.english ??
+                item.title.romaji,
+
+            type:
+                item.type === 'ANIME'
+                    ? 'anime'
+                    : 'manga',
+
+            genres:
+                item.genres ?? [],
+
+            total:
+                item.type === 'ANIME'
+                    ? item.episodes
+                    : item.chapters,
+
+            description:
+                item.description,
+
+            imageUrl:
+                item.coverImage.large,
+
+            status:
+                item.status,
+
+            format:
+                item.format,
+
+            seasonYear:
+                item.seasonYear,
+
+            averageScore:
+                item.averageScore,
+        };
     }
 }
