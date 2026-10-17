@@ -118,6 +118,18 @@ export async function getCatalog(
     return response.json();
 }
 
+export async function getCatalogByGenre(
+    genre: string,
+    page = 1,
+): Promise<CatalogPageResult> {
+    return getCatalog(
+        undefined,
+        page,
+        undefined,
+        genre,
+    );
+}
+
 export async function getCalendarReleases(
     from?: string,
     to?: string,

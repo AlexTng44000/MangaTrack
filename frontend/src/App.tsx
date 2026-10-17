@@ -30,6 +30,10 @@ import {
 } from './pages/StatsPage';
 
 import {
+  RecommendationsPage,
+} from './pages/RecommendationsPage';
+
+import {
   AdminPage,
 } from './pages/AdminPage';
 
@@ -122,6 +126,14 @@ function App() {
 
           <button
             onClick={() =>
+              navigate('/recommendations')
+            }
+          >
+            Recommandations
+          </button>
+
+          <button
+            onClick={() =>
               navigate('/reminders')
             }
           >
@@ -186,6 +198,13 @@ function App() {
           path="/stats"
           element={
             <StatsPage />
+          }
+        />
+
+        <Route
+          path="/recommendations"
+          element={
+            <RecommendationsPage />
           }
         />
 
