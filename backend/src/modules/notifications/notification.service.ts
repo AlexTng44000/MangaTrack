@@ -22,6 +22,7 @@ export class NotificationService {
     async createReminder(
         userId: number,
         input: CreateNotificationInput,
+        reminderId?: number,
     ) {
         const user =
             await this.users.findById(
@@ -68,14 +69,13 @@ export class NotificationService {
                 {
                     userId,
                     email: user.email,
-                    message:
-                        input.message,
+                    message: input.message,
                     scheduledAt:
                         input.scheduledAt,
+                    reminderId,
                 },
                 delay,
             );
-
         return {
             jobId,
             status:
@@ -86,5 +86,13 @@ export class NotificationService {
                 input.scheduledAt ??
                 null,
         };
+    }
+
+    async cancelReminder(
+        jobId: string,
+    ): Promise<boolean> {
+        return this.queue.remove(
+            jobId,
+        );
     }
 }

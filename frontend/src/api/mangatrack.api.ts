@@ -170,23 +170,34 @@ export async function updateProgress(
 
     return response.json();
 }
+
+export type ReminderStatus =
+    | 'pending'
+    | 'sent'
+    | 'failed'
+    | 'cancelled';
+
+export interface Reminder {
+    id: number;
+    userId: number;
+    message: string;
+    scheduledAt: string | null;
+    status: ReminderStatus;
+    jobId: string | null;
+    createdAt: string;
+}
+
 export interface CreateReminderInput {
     message: string;
     scheduledAt?: string;
 }
 
-export interface CreateReminderResult {
-    jobId: string | null;
-    status: 'queued' | 'scheduled';
-    scheduledAt: string | null;
-}
-
 export async function createReminder(
     input: CreateReminderInput,
-): Promise<CreateReminderResult> {
+): Promise<Reminder> {
     const response =
         await authenticatedFetch(
-            `${API_URL}/notifications`,
+            `${API_URL}/reminders`,
             {
                 method: 'POST',
                 headers: {
@@ -205,6 +216,46 @@ export async function createReminder(
         throw new Error(
             data.error ??
             'Impossible de programmer le rappel',
+        );
+    }
+
+    return data;
+}
+
+export async function getReminders():
+    Promise<Reminder[]> {
+    const response =
+        await authenticatedFetch(
+            `${API_URL}/reminders`,
+        );
+
+    if (!response.ok) {
+        throw new Error(
+            'Impossible de charger les rappels',
+        );
+    }
+
+    return response.json();
+}
+
+export async function cancelReminder(
+    id: number,
+): Promise<Reminder> {
+    const response =
+        await authenticatedFetch(
+            `${API_URL}/reminders/${id}`,
+            {
+                method: 'DELETE',
+            },
+        );
+
+    const data =
+        await response.json();
+
+    if (!response.ok) {
+        throw new Error(
+            data.error ??
+            'Impossible d’annuler le rappel',
         );
     }
 

@@ -4,30 +4,48 @@ import type {
     NotificationJobData,
 } from '../modules/notifications/notification.types.js';
 
-import type {
-    EmailPort,
-} from '../modules/notifications/email.port.js';
-
 import {
     FakeEmailAdapter,
 } from '../integrations/email/fakeEmail.adapter.js';
 
-const emailService: EmailPort =
+import {
+    db,
+} from '../infrastructure/database/database.js';
+
+import {
+    PostgresReminderRepository,
+} from '../infrastructure/database/postgresReminder.repository.js';
+
+const emailService =
     new FakeEmailAdapter();
+
+const reminderRepository =
+    new PostgresReminderRepository(
+        db,
+    );
 
 const worker =
     new Worker<NotificationJobData>(
         'notifications',
+
         async (job) => {
             await emailService.send(
                 job.data.email,
                 job.data.message,
             );
 
-            return {
-                sent: true,
-            };
+            if (job.data.reminderId) {
+                await reminderRepository.updateStatus(
+                    job.data.reminderId,
+                    'sent',
+                );
+            }
+
+            console.log(
+                `Notification ${job.id} envoyée`,
+            );
         },
+
         {
             connection: {
                 host: 'localhost',

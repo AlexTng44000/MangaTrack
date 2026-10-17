@@ -8,4 +8,5 @@ export interface NotificationJobData {
     email: string;
     message: string;
     scheduledAt?: string;
+    reminderId?: number;
 }

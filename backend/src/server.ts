@@ -81,6 +81,18 @@ import {
     redis,
 } from './infrastructure/redis/redis.client.js';
 
+import {
+    PostgresReminderRepository,
+} from './infrastructure/database/postgresReminder.repository.js';
+
+import {
+    ReminderService,
+} from './modules/reminders/reminder.service.js';
+
+import {
+    createReminderRouter,
+} from './modules/reminders/reminder.routes.js';
+
 const app = express();
 const PORT = 3000;
 
@@ -143,6 +155,17 @@ const adminService =
         userRepository,
     );
 
+const reminderRepository =
+    new PostgresReminderRepository(
+        db,
+    );
+
+const reminderService =
+    new ReminderService(
+        reminderRepository,
+        notificationService,
+    );
+
 app.get('/health', (_req, res) => {
     res.json({
         status: 'ok',
@@ -193,6 +216,14 @@ app.use(
         adminService,
         requireAuth,
         requireAdmin,
+    ),
+);
+
+app.use(
+    '/reminders',
+    createReminderRouter(
+        reminderService,
+        requireAuth,
     ),
 );
 
