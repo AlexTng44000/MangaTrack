@@ -9,6 +9,7 @@ import type {
 
 import {
     useNavigate,
+    useSearchParams,
 } from 'react-router-dom';
 
 import {
@@ -63,7 +64,70 @@ function getSortLabel(
     }
 }
 
+function isCatalogSort(
+    value: string | null,
+): value is CatalogSort {
+    return (
+        value === 'popularity' ||
+        value === 'trending' ||
+        value === 'score' ||
+        value === 'recent' ||
+        value === 'title'
+    );
+}
+
 export function CatalogPage() {
+    const [
+        searchParams,
+        setSearchParams,
+    ] =
+        useSearchParams();
+
+    const initialSearch =
+        searchParams.get('q')
+            ?.trim() ??
+        '';
+
+    const rawInitialType =
+        searchParams.get('type');
+
+    const initialType:
+        '' | 'anime' | 'manga' =
+        rawInitialType === 'anime' ||
+            rawInitialType === 'manga'
+            ? rawInitialType
+            : '';
+
+    const initialGenre =
+        searchParams.get('genre')
+            ?.trim() ??
+        '';
+
+    const rawInitialSort =
+        searchParams.get('sort');
+
+    const initialSort:
+        CatalogSort =
+        isCatalogSort(
+            rawInitialSort,
+        )
+            ? rawInitialSort
+            : 'popularity';
+
+    const rawInitialPage =
+        Number(
+            searchParams.get('page') ??
+            '1',
+        );
+
+    const initialPage =
+        Number.isInteger(
+            rawInitialPage,
+        ) &&
+            rawInitialPage > 0
+            ? rawInitialPage
+            : 1;
+
     const [
         items,
         setItems,
@@ -104,13 +168,17 @@ export function CatalogPage() {
         search,
         setSearch,
     ] =
-        useState('');
+        useState(
+            initialSearch,
+        );
 
     const [
         activeSearch,
         setActiveSearch,
     ] =
-        useState('');
+        useState(
+            initialSearch,
+        );
 
     const [
         searching,
@@ -122,7 +190,9 @@ export function CatalogPage() {
         page,
         setPage,
     ] =
-        useState(1);
+        useState(
+            initialPage,
+        );
 
     const [
         hasNextPage,
@@ -142,13 +212,15 @@ export function CatalogPage() {
     ] =
         useState<
             '' | 'anime' | 'manga'
-        >('');
+        >(initialType);
 
     const [
         genreFilter,
         setGenreFilter,
     ] =
-        useState('');
+        useState(
+            initialGenre,
+        );
 
     const [
         activeType,
@@ -156,20 +228,22 @@ export function CatalogPage() {
     ] =
         useState<
             '' | 'anime' | 'manga'
-        >('');
+        >(initialType);
 
     const [
         activeGenre,
         setActiveGenre,
     ] =
-        useState('');
+        useState(
+            initialGenre,
+        );
 
     const [
         sortFilter,
         setSortFilter,
     ] =
         useState<CatalogSort>(
-            'popularity',
+            initialSort,
         );
 
     const [
@@ -177,60 +251,160 @@ export function CatalogPage() {
         setActiveSort,
     ] =
         useState<CatalogSort>(
-            'popularity',
+            initialSort,
         );
 
     const navigate =
         useNavigate();
 
     useEffect(() => {
-        Promise.all([
-            getCatalog(
-                undefined,
-                1,
-            ),
-            getLibrary(),
-        ])
-            .then(
-                ([
-                    catalogData,
-                    libraryData,
-                ]) => {
-                    setItems(
-                        catalogData.items,
+        async function loadInitialData() {
+            try {
+                const libraryPromise =
+                    getLibrary();
+
+                let currentPage = 1;
+
+                let catalogData =
+                    await getCatalog(
+                        initialSearch ||
+                        undefined,
+                        currentPage,
+                        initialType ||
+                        undefined,
+                        initialGenre ||
+                        undefined,
+                        initialSort,
                     );
 
-                    setPage(
-                        catalogData.page,
-                    );
+                const loadedItems = [
+                    ...catalogData.items,
+                ];
 
-                    setHasNextPage(
-                        catalogData.hasNextPage,
-                    );
+                while (
+                    currentPage <
+                    initialPage &&
+                    catalogData.hasNextPage
+                ) {
+                    currentPage += 1;
 
-                    setLibraryEntries(
-                        Object.fromEntries(
-                            libraryData.map(
-                                (entry) => [
-                                    entry.catalogItemId,
-                                    entry.id,
-                                ],
-                            ),
+                    catalogData =
+                        await getCatalog(
+                            initialSearch ||
+                            undefined,
+                            currentPage,
+                            initialType ||
+                            undefined,
+                            initialGenre ||
+                            undefined,
+                            initialSort,
+                        );
+
+                    loadedItems.push(
+                        ...catalogData.items,
+                    );
+                }
+
+                const libraryData =
+                    await libraryPromise;
+
+                setItems(
+                    loadedItems,
+                );
+
+                setPage(
+                    catalogData.page,
+                );
+
+                setHasNextPage(
+                    catalogData.hasNextPage,
+                );
+
+                setLibraryEntries(
+                    Object.fromEntries(
+                        libraryData.map(
+                            (entry) => [
+                                entry.catalogItemId,
+                                entry.id,
+                            ],
                         ),
-                    );
-                },
-            )
-            .catch(() => {
+                    ),
+                );
+            } catch {
                 setError(
                     'Impossible de charger le catalogue.',
                 );
-            })
-            .finally(() => {
+            } finally {
                 setLoading(
                     false,
                 );
-            });
+            }
+        }
+
+        void loadInitialData();
+        // Les paramètres sont volontairement lus uniquement
+        // au montage de la page.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
+
+    function saveCatalogState(
+        searchValue: string,
+        typeValue:
+            '' | 'anime' | 'manga',
+        genreValue: string,
+        sortValue: CatalogSort,
+        pageValue = 1,
+    ) {
+        const params =
+            new URLSearchParams();
+
+        if (searchValue) {
+            params.set(
+                'q',
+                searchValue,
+            );
+        }
+
+        if (typeValue) {
+            params.set(
+                'type',
+                typeValue,
+            );
+        }
+
+        if (genreValue) {
+            params.set(
+                'genre',
+                genreValue,
+            );
+        }
+
+        if (
+            sortValue !==
+            'popularity'
+        ) {
+            params.set(
+                'sort',
+                sortValue,
+            );
+        }
+
+        if (pageValue > 1) {
+            params.set(
+                'page',
+                String(
+                    pageValue,
+                ),
+            );
+        }
+
+        setSearchParams(
+            params,
+            {
+                replace: true,
+            },
+        );
+    }
 
     async function handleAdd(
         catalogItemId: number,
@@ -360,6 +534,14 @@ export function CatalogPage() {
             setActiveSort(
                 sortFilter,
             );
+
+            saveCatalogState(
+                normalizedSearch,
+                typeFilter,
+                genreFilter,
+                sortFilter,
+                1,
+            );
         } catch {
             setError(
                 'Impossible d’effectuer la recherche.',
@@ -426,6 +608,13 @@ export function CatalogPage() {
             setHasNextPage(
                 result.hasNextPage,
             );
+
+            setSearchParams(
+                new URLSearchParams(),
+                {
+                    replace: true,
+                },
+            );
         } catch {
             setError(
                 'Impossible de réinitialiser le catalogue.',
@@ -471,6 +660,14 @@ export function CatalogPage() {
 
             setHasNextPage(
                 result.hasNextPage,
+            );
+
+            saveCatalogState(
+                activeSearch,
+                activeType,
+                activeGenre,
+                activeSort,
+                result.page,
             );
         } catch {
             setError(
