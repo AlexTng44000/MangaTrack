@@ -6,5 +6,9 @@ export interface NotificationQueuePort {
     enqueue(
         data: NotificationJobData,
         delay: number,
-    ): Promise<string | null>;
+    ): Promise<string>;
+
+    remove(
+        jobId: string,
+    ): Promise<boolean>;
 }

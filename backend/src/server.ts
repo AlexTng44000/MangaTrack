@@ -2,8 +2,12 @@ import express from 'express';
 import cors from 'cors';
 
 import {
-    FakeCatalogAdapter,
-} from './integrations/catalog/fakeCatalog.adapter.js';
+    env,
+} from './config/env.js';
+
+import {
+    AniListCatalogAdapter,
+} from './integrations/catalog/anilistCatalog.adapter.js';
 
 import {
     CatalogService,
@@ -36,6 +40,59 @@ import {
     BullMqNotificationQueueAdapter,
 } from './infrastructure/queue/bullMqNotificationQueue.adapter.js';
 
+import {
+    PostgresUserRepository,
+} from './infrastructure/database/postgresUser.repository.js';
+
+import {
+    BcryptAdapter,
+} from './integrations/security/bcrypt.adapter.js';
+
+import {
+    JwtAdapter,
+} from './integrations/security/jwt.adapter.js';
+
+import {
+    AuthService,
+} from './modules/users/auth.service.js';
+
+import {
+    createAuthRouter,
+} from './modules/users/auth.routes.js';
+
+import {
+    createRequireAuth,
+    requireAdmin,
+} from './modules/users/auth.middleware.js';
+
+import {
+    AdminService,
+} from './modules/users/admin.service.js';
+
+import {
+    createAdminRouter,
+} from './modules/users/admin.routes.js';
+
+import {
+    CachedCatalogAdapter,
+} from './integrations/catalog/cachedCatalog.adapter.js';
+
+import {
+    redis,
+} from './infrastructure/redis/redis.client.js';
+
+import {
+    PostgresReminderRepository,
+} from './infrastructure/database/postgresReminder.repository.js';
+
+import {
+    ReminderService,
+} from './modules/reminders/reminder.service.js';
+
+import {
+    createReminderRouter,
+} from './modules/reminders/reminder.routes.js';
+
 const app = express();
 const PORT = 3000;
 
@@ -54,16 +111,61 @@ const progressService =
 const notificationQueue =
     new BullMqNotificationQueueAdapter();
 
+const userRepository =
+    new PostgresUserRepository(db);
+
 const notificationService =
     new NotificationService(
         notificationQueue,
+        userRepository,
+    );
+const aniListCatalog =
+    new AniListCatalogAdapter(
+        env.ANILIST_API_URL,
     );
 
 const catalogAdapter =
-    new FakeCatalogAdapter();
+    new CachedCatalogAdapter(
+        aniListCatalog,
+        redis,
+    );
 
 const catalogService =
     new CatalogService(catalogAdapter);
+
+
+const passwordHasher =
+    new BcryptAdapter();
+
+const tokenService =
+    new JwtAdapter();
+
+const requireAuth =
+    createRequireAuth(tokenService);
+
+const authService =
+    new AuthService(
+        userRepository,
+        passwordHasher,
+        tokenService,
+    );
+
+const adminService =
+    new AdminService(
+        userRepository,
+    );
+
+const reminderRepository =
+    new PostgresReminderRepository(
+        db,
+    );
+
+const reminderService =
+    new ReminderService(
+        reminderRepository,
+        notificationService,
+    );
+
 app.get('/health', (_req, res) => {
     res.json({
         status: 'ok',
@@ -78,17 +180,51 @@ app.use(
 
 app.use(
     '/library',
-    createLibraryRouter(libraryService),
+    createLibraryRouter(
+        libraryService,
+        requireAuth,
+    ),
 );
 
 app.use(
     '/progress',
-    createProgressRouter(progressService),
+    createProgressRouter(
+        progressService,
+        requireAuth,
+    ),
 );
 
 app.use(
     '/notifications',
-    createNotificationRouter(notificationService),
+    createNotificationRouter(
+        notificationService,
+        requireAuth,
+    ),
+);
+
+app.use(
+    '/auth',
+    createAuthRouter(
+        authService,
+        requireAuth,
+    ),
+);
+
+app.use(
+    '/admin',
+    createAdminRouter(
+        adminService,
+        requireAuth,
+        requireAdmin,
+    ),
+);
+
+app.use(
+    '/reminders',
+    createReminderRouter(
+        reminderService,
+        requireAuth,
+    ),
 );
 
 app.listen(PORT, () => {
