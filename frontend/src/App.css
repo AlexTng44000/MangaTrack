@@ -4630,3 +4630,11 @@ body {
 
   color: #ffffff !important;
 }
+
+.success-message {
+  border: 1px solid #86efac !important;
+  background: rgba(220, 252, 231, 0.96) !important;
+  color: #166534 !important;
+  font-weight: 700;
+  box-shadow: 0 8px 20px rgba(22, 101, 52, 0.08);
+}
