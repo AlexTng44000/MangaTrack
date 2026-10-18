@@ -1,12 +1,18 @@
-import { Worker } from 'bullmq';
+import {
+    Worker,
+} from 'bullmq';
 
 import type {
     NotificationJobData,
 } from '../modules/notifications/notification.types.js';
 
 import {
-    FakeEmailAdapter,
-} from '../integrations/email/fakeEmail.adapter.js';
+    BrevoEmailAdapter,
+} from '../integrations/email/brevoEmail.adapter.js';
+
+import {
+    env,
+} from '../config/env.js';
 
 import {
     db,
@@ -17,7 +23,25 @@ import {
 } from '../infrastructure/database/postgresReminder.repository.js';
 
 const emailService =
-    new FakeEmailAdapter();
+    new BrevoEmailAdapter({
+        host:
+            env.SMTP_HOST,
+
+        port:
+            env.SMTP_PORT,
+
+        user:
+            env.SMTP_USER,
+
+        password:
+            env.SMTP_PASSWORD,
+
+        fromName:
+            env.MAIL_FROM_NAME,
+
+        fromEmail:
+            env.MAIL_FROM_EMAIL,
+    });
 
 const reminderRepository =
     new PostgresReminderRepository(
@@ -118,5 +142,5 @@ worker.on(
 );
 
 console.log(
-    'Worker notifications démarré',
+    'Worker notifications démarré avec Brevo SMTP',
 );

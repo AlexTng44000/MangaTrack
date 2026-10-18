@@ -23,6 +23,39 @@ const envSchema = z.object({
         .default(
             'https://graphql.anilist.co',
         ),
+
+    SMTP_HOST: z
+        .string()
+        .min(1)
+        .default(
+            'smtp-relay.brevo.com',
+        ),
+
+    SMTP_PORT: z
+        .coerce
+        .number()
+        .int()
+        .positive()
+        .default(587),
+
+    SMTP_USER: z
+        .string()
+        .min(1),
+
+    SMTP_PASSWORD: z
+        .string()
+        .min(1),
+
+    MAIL_FROM_NAME: z
+        .string()
+        .min(1)
+        .default(
+            'MangaTrack',
+        ),
+
+    MAIL_FROM_EMAIL: z
+        .string()
+        .email(),
 });
 
 const result =
