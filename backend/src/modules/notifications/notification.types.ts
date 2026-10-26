@@ -1,6 +1,4 @@
 export interface CreateNotificationInput {
-    userId: number;
-    email: string;
     message: string;
     scheduledAt?: string;
 }
@@ -10,4 +8,5 @@ export interface NotificationJobData {
     email: string;
     message: string;
     scheduledAt?: string;
+    reminderId?: number;
 }

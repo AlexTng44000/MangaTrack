@@ -12,11 +12,13 @@ export class ProgressService {
     ) { }
 
     async updateProgress(
+        userId: number,
         libraryEntryId: number,
         progress: number,
-    ): Promise<LibraryEntry | undefined> {
+    ) {
         return this.libraryService.updateProgress(
             libraryEntryId,
+            userId,
             progress,
         );
     }

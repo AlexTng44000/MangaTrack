@@ -4,46 +4,71 @@ import type {
     NotificationService,
 } from './notification.service.js';
 
+import {
+    createNotificationSchema,
+} from './notification.schema.js';
+
 import type {
-    CreateNotificationInput,
-} from './notification.types.js';
+    RequestHandler,
+} from 'express';
 
 export function createNotificationRouter(
-    notificationService: NotificationService,
+    notificationService:
+        NotificationService,
+    requireAuth: RequestHandler,
 ): Router {
     const router = Router();
 
-    router.post('/', async (req, res) => {
-        const input =
-            req.body as CreateNotificationInput;
-
-        if (
-            !input.userId ||
-            !input.email ||
-            !input.message
-        ) {
-            return res.status(400).json({
-                error:
-                    'userId, email et message sont obligatoires',
-            });
-        }
-
-        try {
-            const result =
-                await notificationService.createReminder(
-                    input,
+    router.post(
+        '/',
+        requireAuth,
+        async (req, res) => {
+            const validation =
+                createNotificationSchema.safeParse(
+                    req.body,
                 );
 
-            return res.status(202).json(result);
-        } catch (error) {
-            return res.status(400).json({
-                error:
-                    error instanceof Error
-                        ? error.message
-                        : 'Rappel invalide',
-            });
-        }
-    });
+            if (!validation.success) {
+                return res.status(400).json({
+                    error:
+                        'Données invalides',
+                    details:
+                        validation.error.flatten(),
+                });
+            }
+
+            try {
+                const result =
+                    await notificationService
+                        .createReminder(
+                            req.auth!.userId,
+                            validation.data,
+                        );
+
+                return res
+                    .status(202)
+                    .json(result);
+            } catch (error) {
+                if (
+                    error instanceof Error &&
+                    error.message ===
+                    'USER_NOT_FOUND'
+                ) {
+                    return res.status(404).json({
+                        error:
+                            'Utilisateur introuvable',
+                    });
+                }
+
+                return res.status(400).json({
+                    error:
+                        error instanceof Error
+                            ? error.message
+                            : 'Rappel invalide',
+                });
+            }
+        },
+    );
 
     return router;
 }
