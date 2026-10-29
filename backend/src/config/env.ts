@@ -9,6 +9,13 @@ const envSchema = z.object({
         .string()
         .url(),
 
+    REDIS_URL: z
+        .string()
+        .url()
+        .default(
+            'redis://localhost:6379',
+        ),
+
     JWT_SECRET: z
         .string()
         .min(32),

@@ -2,6 +2,8 @@ import {
     Worker,
 } from 'bullmq';
 
+import Redis from 'ioredis';
+
 import type {
     NotificationJobData,
 } from '../modules/notifications/notification.types.js';
@@ -21,6 +23,14 @@ import {
 import {
     PostgresReminderRepository,
 } from '../infrastructure/database/postgresReminder.repository.js';
+
+const redisConnection =
+    new Redis(
+        env.REDIS_URL,
+        {
+            maxRetriesPerRequest: null,
+        },
+    );
 
 const emailService =
     new BrevoEmailAdapter({
@@ -67,10 +77,8 @@ const worker =
         },
 
         {
-            connection: {
-                host: 'localhost',
-                port: 6379,
-            },
+            connection:
+                redisConnection,
         },
     );
 

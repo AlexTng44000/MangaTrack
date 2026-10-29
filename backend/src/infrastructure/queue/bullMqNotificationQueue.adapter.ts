@@ -1,4 +1,11 @@
-import { Queue } from 'bullmq';
+import Redis from 'ioredis';
+import {
+    Queue,
+} from 'bullmq';
+
+import {
+    env,
+} from '../../config/env.js';
 
 import type {
     NotificationQueuePort,
@@ -10,14 +17,21 @@ import type {
 
 export class BullMqNotificationQueueAdapter
     implements NotificationQueuePort {
+
+    private readonly connection =
+        new Redis(
+            env.REDIS_URL,
+            {
+                maxRetriesPerRequest: null,
+            },
+        );
+
     private readonly queue =
         new Queue<NotificationJobData>(
             'notifications',
             {
-                connection: {
-                    host: 'localhost',
-                    port: 6379,
-                },
+                connection:
+                    this.connection,
             },
         );
 
@@ -25,6 +39,7 @@ export class BullMqNotificationQueueAdapter
         data: NotificationJobData,
         delay: number,
     ): Promise<string> {
+
         const job =
             await this.queue.add(
                 'send-reminder',
@@ -51,6 +66,7 @@ export class BullMqNotificationQueueAdapter
     async remove(
         jobId: string,
     ): Promise<boolean> {
+
         const job =
             await this.queue.getJob(
                 jobId,
