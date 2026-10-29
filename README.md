@@ -500,7 +500,7 @@ cp frontend/.env.example frontend/.env
 Exemple :
 
 ```env
-VITE_API_URL=http://localhost:3000
+VITE_API_URL=http://localhost:3354
 ```
 
 ---
@@ -542,13 +542,13 @@ npm run dev
 L’API démarre sur :
 
 ```text
-http://localhost:3000
+http://localhost:3354
 ```
 
 Vérification :
 
 ```bash
-curl http://localhost:3000/health
+curl http://localhost:3354/health
 ```
 
 Réponse attendue :

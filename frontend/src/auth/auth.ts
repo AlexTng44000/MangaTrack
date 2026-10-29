@@ -1,6 +1,6 @@
 const API_URL =
     import.meta.env.VITE_API_URL ??
-    'http://localhost:3000';
+    'http://localhost:3354';
 
 const TOKEN_KEY = 'mangatrack_token';
 const USER_KEY = 'mangatrack_user';
