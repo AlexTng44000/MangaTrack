@@ -17,13 +17,26 @@ import {
     createCatalogRouter,
 } from './modules/catalog/catalog.routes.js';
 
-import { LibraryService } from './modules/library/library.service.js';
-import { createLibraryRouter } from './modules/library/library.routes.js';
+import {
+    LibraryService,
+} from './modules/library/library.service.js';
 
-import { ProgressService } from './modules/progress/progress.service.js';
-import { createProgressRouter } from './modules/progress/progress.routes.js';
+import {
+    createLibraryRouter,
+} from './modules/library/library.routes.js';
 
-import { db } from './infrastructure/database/database.js';
+import {
+    ProgressService,
+} from './modules/progress/progress.service.js';
+
+import {
+    createProgressRouter,
+} from './modules/progress/progress.routes.js';
+
+import {
+    db,
+} from './infrastructure/database/database.js';
+
 import {
     PostgresLibraryRepository,
 } from './infrastructure/database/postgresLibrary.repository.js';
@@ -93,32 +106,70 @@ import {
     createReminderRouter,
 } from './modules/reminders/reminder.routes.js';
 
+import {
+    globalRateLimit,
+    authRateLimit,
+    catalogRateLimit,
+} from './infrastructure/security/rateLimit.middleware.js';
+
+
 const app = express();
 const PORT = 3000;
 
 app.use(cors());
+
+/*
+ * Healthcheck volontairement placé avant le rate limiter.
+ * Docker / un hébergeur doit toujours pouvoir vérifier
+ * si l'API est disponible.
+ */
+app.get(
+    '/health',
+    (_req, res) => {
+        res.json({
+            status: 'ok',
+            application: 'MangaTrack',
+        });
+    },
+);
+
+/*
+ * Protection globale de l'API.
+ */
+app.use(globalRateLimit);
+
 app.use(express.json());
 
+
 const libraryRepository =
-    new PostgresLibraryRepository(db);
+    new PostgresLibraryRepository(
+        db,
+    );
 
 const libraryService =
-    new LibraryService(libraryRepository);
+    new LibraryService(
+        libraryRepository,
+    );
 
 const progressService =
-    new ProgressService(libraryService);
+    new ProgressService(
+        libraryService,
+    );
 
 const notificationQueue =
     new BullMqNotificationQueueAdapter();
 
 const userRepository =
-    new PostgresUserRepository(db);
+    new PostgresUserRepository(
+        db,
+    );
 
 const notificationService =
     new NotificationService(
         notificationQueue,
         userRepository,
     );
+
 const aniListCatalog =
     new AniListCatalogAdapter(
         env.ANILIST_API_URL,
@@ -131,8 +182,9 @@ const catalogAdapter =
     );
 
 const catalogService =
-    new CatalogService(catalogAdapter);
-
+    new CatalogService(
+        catalogAdapter,
+    );
 
 const passwordHasher =
     new BcryptAdapter();
@@ -141,7 +193,9 @@ const tokenService =
     new JwtAdapter();
 
 const requireAuth =
-    createRequireAuth(tokenService);
+    createRequireAuth(
+        tokenService,
+    );
 
 const authService =
     new AuthService(
@@ -166,16 +220,18 @@ const reminderService =
         notificationService,
     );
 
-app.get('/health', (_req, res) => {
-    res.json({
-        status: 'ok',
-        application: 'MangaTrack',
-    });
-});
 
+/*
+ * Catalogue :
+ * protection plus stricte pour limiter les appels
+ * susceptibles d'atteindre AniList.
+ */
 app.use(
     '/catalog',
-    createCatalogRouter(catalogService),
+    catalogRateLimit,
+    createCatalogRouter(
+        catalogService,
+    ),
 );
 
 app.use(
@@ -202,8 +258,13 @@ app.use(
     ),
 );
 
+/*
+ * Authentification :
+ * protection plus stricte contre les tentatives répétées.
+ */
 app.use(
     '/auth',
+    authRateLimit,
     createAuthRouter(
         authService,
         requireAuth,
@@ -227,8 +288,12 @@ app.use(
     ),
 );
 
-app.listen(PORT, () => {
-    console.log(
-        `MangaTrack API started on http://localhost:${PORT}`,
-    );
-});
+
+app.listen(
+    PORT,
+    () => {
+        console.log(
+            `MangaTrack API started on http://localhost:${PORT}`,
+        );
+    },
+);
