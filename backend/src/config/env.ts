@@ -13,7 +13,7 @@ const envSchema = z.object({
         .string()
         .url()
         .default(
-            'redis://localhost:6379',
+            'redis://localhost:6380',
         ),
 
     JWT_SECRET: z
@@ -29,6 +29,20 @@ const envSchema = z.object({
         .url()
         .default(
             'https://graphql.anilist.co',
+        ),
+
+    PORT: z
+        .coerce
+        .number()
+        .int()
+        .positive()
+        .default(3354),
+
+    CORS_ORIGIN: z
+        .string()
+        .min(1)
+        .default(
+            'http://localhost:5173',
         ),
 
     SMTP_HOST: z
@@ -79,4 +93,5 @@ if (!result.success) {
     process.exit(1);
 }
 
-export const env = result.data;
+export const env =
+    result.data;

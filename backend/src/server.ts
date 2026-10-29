@@ -114,9 +114,16 @@ import {
 
 
 const app = express();
-const PORT = 3000;
 
-app.use(cors());
+const PORT =
+    env.PORT;
+
+app.use(
+    cors({
+        origin:
+            env.CORS_ORIGIN,
+    }),
+);
 
 /*
  * Healthcheck volontairement placé avant le rate limiter.

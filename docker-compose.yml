@@ -10,7 +10,7 @@ services:
       POSTGRES_PASSWORD: mangatrack_dev
 
     ports:
-      - "5499:5499"
+      - "5499:5432"
 
     volumes:
       - postgres_data:/var/lib/postgresql/data
@@ -28,7 +28,7 @@ services:
     restart: unless-stopped
 
     ports:
-      - "6379:6379"
+      - "6380:6379"
 
     command: [ "redis-server", "--appendonly", "yes", "--maxmemory-policy", "noeviction" ]
 
@@ -54,11 +54,11 @@ services:
     environment:
       DATABASE_URL: postgresql://mangatrack:mangatrack_dev@postgres:5432/mangatrack
       REDIS_URL: redis://redis:6379
+      PORT: 3354
       CORS_ORIGIN: http://localhost:5173
-      PORT: 3000
 
     ports:
-      - "3000:3000"
+      - "3354:3354"
 
     depends_on:
       postgres:
@@ -96,7 +96,7 @@ services:
     restart: unless-stopped
 
     environment:
-      VITE_API_URL: http://localhost:3000
+      VITE_API_URL: http://localhost:3354
 
     ports:
       - "5173:5173"
