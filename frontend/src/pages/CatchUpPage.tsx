@@ -372,7 +372,7 @@ export function CatchUpPage() {
 
                     <p>
                         Choisis une œuvre et une date
-                        cible. MangaTrack calcule le
+                        cible. MyMangaTracker calcule le
                         rythme à suivre pour arriver
                         à jour sans faire les calculs
                         toi-même.

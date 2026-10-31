@@ -29,13 +29,15 @@ export class PostgresReminderRepository
                 INSERT INTO reminders (
                     user_id,
                     message,
-                    scheduled_at
+                    scheduled_at,
+                    catalog_item_id
                 )
-                VALUES ($1, $2, $3)
+                VALUES ($1, $2, $3, $4)
 
                 RETURNING
                     id,
                     user_id AS "userId",
+                    catalog_item_id AS "catalogItemId",
                     message,
                     scheduled_at AS "scheduledAt",
                     status,
@@ -46,6 +48,7 @@ export class PostgresReminderRepository
                     userId,
                     input.message,
                     input.scheduledAt ?? null,
+                    input.catalogItemId ?? null,
                 ],
             );
 
@@ -61,6 +64,7 @@ export class PostgresReminderRepository
                 SELECT
                     id,
                     user_id AS "userId",
+                    catalog_item_id AS "catalogItemId",
                     message,
                     scheduled_at AS "scheduledAt",
                     status,
@@ -88,6 +92,7 @@ export class PostgresReminderRepository
                 SELECT
                     id,
                     user_id AS "userId",
+                    catalog_item_id AS "catalogItemId",
                     message,
                     scheduled_at AS "scheduledAt",
                     status,

@@ -1,334 +1,151 @@
-import {
-  useState,
-} from 'react';
-
+import { t } from "./i18n";
+import { useState } from "react";
 import {
   Navigate,
   NavLink,
   Route,
   Routes,
   useNavigate,
-} from 'react-router-dom';
-
-import {
-  CatalogPage,
-} from './pages/CatalogPage';
-
-import {
-  LibraryPage,
-} from './pages/LibraryPage';
-
-import {
-  RemindersPage,
-} from './pages/RemindersPage';
-
-import {
-  CalendarPage,
-} from './pages/CalendarPage';
-
-import {
-  StatsPage,
-} from './pages/StatsPage';
-
-import {
-  RecommendationsPage,
-} from './pages/RecommendationsPage';
-
-import {
-  CatchUpPage,
-} from './pages/CatchUpPage';
-
-import {
-  AdminPage,
-} from './pages/AdminPage';
-
-import {
-  AuthPage,
-} from './auth/AuthPage';
-
-import {
-  getCurrentUser,
-  logout,
-} from './auth/auth';
-
-import type {
-  AuthUser,
-} from './auth/auth';
-
-import {
-  WorkDetailsPage,
-} from './pages/WorkDetailsPage';
-
-import './App.css';
+} from "react-router-dom";
+import { HomePage } from "./pages/HomePage";
+import { RemindersPage } from "./pages/RemindersPage";
+import { CalendarPage } from "./pages/CalendarPage";
+import { StatsPage } from "./pages/StatsPage";
+import { RecommendationsPage } from "./pages/RecommendationsPage";
+import { AdminPage } from "./pages/AdminPage";
+import { AuthPage } from "./auth/AuthPage";
+import { getCurrentUser, logout } from "./auth/auth";
+import type { AuthUser } from "./auth/auth";
+import { WorkDetailsPage } from "./pages/WorkDetailsPage";
+import { BRAND_NAME } from "./brand";
+import { LanguagePicker } from "./components/LanguagePicker";
+import { useLanguage } from "./i18n";
+import "./App.css";
 
 function App() {
-  const [user, setUser] =
-    useState<AuthUser | null>(
-      getCurrentUser(),
-    );
-
-  const navigate =
-    useNavigate();
-
-  if (!user) {
+  useLanguage();
+  const [user, setUser] = useState<AuthUser | null>(getCurrentUser());
+  const [menuOpen, setMenuOpen] = useState(false);
+  const navigate = useNavigate();
+  if (!user)
     return (
-      <AuthPage
-        onAuthenticated={(
-          authenticatedUser,
-        ) => {
-          setUser(
-            authenticatedUser,
-          );
-        }}
-      />
+      <>
+        <div className="auth-language">
+          <LanguagePicker />
+        </div>
+        <AuthPage onAuthenticated={setUser} />
+      </>
     );
-  }
-
-  function getNavLinkClass({
-    isActive,
-  }: {
-    isActive: boolean;
-  }) {
-    return isActive
-      ? 'app-nav-link app-nav-link-active'
-      : 'app-nav-link';
-  }
-
   function handleLogout() {
     logout();
-
-    setUser(
-      null,
-    );
-
-    navigate(
-      '/catalog',
-      {
-        replace: true,
-      },
-    );
+    setUser(null);
+    setMenuOpen(false);
+    navigate("/", { replace: true });
   }
-
+  const navClass = ({ isActive }: { isActive: boolean }) =>
+    isActive ? "app-nav-link app-nav-link-active" : "app-nav-link";
   return (
     <>
-      <header className="app-header">
-        <button
-          type="button"
+      <a className="skip-link" href="#main-content">
+        {t("Aller au contenu")}
+      </a>
+      <header className="app-header friendly-header">
+        <NavLink
+          to="/"
           className="app-brand"
-          onClick={() =>
-            navigate(
-              '/catalog',
-            )
-          }
+          onClick={() => setMenuOpen(false)}
+          aria-label={t("Accueil MyMangaTracker")}
         >
-          <span className="app-brand-mark">
-            M
-          </span>
-
+          <svg className="brand-symbol" viewBox="0 0 40 40" aria-hidden="true">
+            <rect
+              x="2"
+              y="2"
+              width="36"
+              height="36"
+              rx="12"
+              fill="currentColor"
+            />
+            <path
+              d="M11 12h8a5 5 0 0 1 5 5v13l-6-4h-7V12Zm13 3h5v15h-5"
+              fill="none"
+              stroke="white"
+              strokeWidth="2"
+              strokeLinejoin="round"
+            />
+          </svg>
           <span className="app-brand-copy">
-            <strong>
-              MangaTrack
-            </strong>
-
-            <small>
-              Anime & Manga Tracker
-            </small>
+            <strong>{BRAND_NAME}</strong>
+            <small>{t("Ton histoire, à ton rythme")}</small>
           </span>
-        </button>
-
-        <nav
-          className="app-nav"
-          aria-label="Navigation principale"
+        </NavLink>
+        <button
+          className="menu-toggle"
+          type="button"
+          aria-controls="main-navigation"
+          aria-expanded={menuOpen}
+          onClick={() => setMenuOpen(!menuOpen)}
         >
-          <NavLink
-            to="/catalog"
-            className={
-              getNavLinkClass
-            }
-          >
-            Catalogue
+          {menuOpen ? t("Fermer le menu") : "Menu"}
+        </button>
+        <nav
+          id="main-navigation"
+          className={`app-nav ${menuOpen ? "is-open" : ""}`}
+          aria-label={t("Navigation principale")}
+          onClick={() => setMenuOpen(false)}
+        >
+          <NavLink to="/" end className={navClass}>
+            {t("Accueil")}
           </NavLink>
-
-          <NavLink
-            to="/library"
-            className={
-              getNavLinkClass
-            }
-          >
-            Bibliothèque
+          <NavLink to="/calendar" className={navClass}>
+            {t("Calendrier")}
           </NavLink>
-
-          <NavLink
-            to="/calendar"
-            className={
-              getNavLinkClass
-            }
-          >
-            Calendrier
+          <NavLink to="/recommendations" className={navClass}>
+            {t("Pour toi")}
           </NavLink>
-
-          <NavLink
-            to="/stats"
-            className={
-              getNavLinkClass
-            }
-          >
-            Statistiques
+          <NavLink to="/stats" className={navClass}>
+            {t("Statistiques")}
           </NavLink>
-
-          <NavLink
-            to="/recommendations"
-            className={
-              getNavLinkClass
-            }
-          >
-            Recommandations
-          </NavLink>
-
-          <NavLink
-            to="/catch-up"
-            className={
-              getNavLinkClass
-            }
-          >
-            Rattrapage
-          </NavLink>
-
-          <NavLink
-            to="/reminders"
-            className={
-              getNavLinkClass
-            }
-          >
-            Rappels
-          </NavLink>
-
-          {user.role ===
-            'admin' && (
-              <NavLink
-                to="/admin"
-                className={
-                  getNavLinkClass
-                }
-              >
-                Administration
-              </NavLink>
-            )}
+          {user.role === "admin" && (
+            <NavLink to="/admin" className={navClass}>
+              {t("Administration")}
+            </NavLink>
+          )}
         </nav>
-
         <div className="app-header-actions">
-          <div className="user-chip">
-            <span className="user-avatar">
-              {user.email
-                .charAt(0)
-                .toUpperCase()}
-            </span>
-
-            <div className="user-chip-copy">
-              <span>
-                {user.email}
-              </span>
-
-              <small>
-                {user.role ===
-                  'admin'
-                  ? 'Administrateur'
-                  : 'Utilisateur'}
-              </small>
-            </div>
-          </div>
-
+          <LanguagePicker />
           <button
             type="button"
             className="logout-button"
-            onClick={
-              handleLogout
-            }
+            onClick={handleLogout}
           >
-            Déconnexion
+            {t("Déconnexion")}
           </button>
         </div>
       </header>
-
-      <Routes>
-        <Route
-          path="/catalog"
-          element={
-            <CatalogPage />
-          }
-        />
-
-        <Route
-          path="/catalog/:id"
-          element={
-            <WorkDetailsPage />
-          }
-        />
-
-        <Route
-          path="/library"
-          element={
-            <LibraryPage />
-          }
-        />
-
-        <Route
-          path="/calendar"
-          element={
-            <CalendarPage />
-          }
-        />
-
-        <Route
-          path="/stats"
-          element={
-            <StatsPage />
-          }
-        />
-
-        <Route
-          path="/recommendations"
-          element={
-            <RecommendationsPage />
-          }
-        />
-
-        <Route
-          path="/catch-up"
-          element={
-            <CatchUpPage />
-          }
-        />
-
-        <Route
-          path="/reminders"
-          element={
-            <RemindersPage />
-          }
-        />
-
-        {user.role ===
-          'admin' && (
-            <Route
-              path="/admin"
-              element={
-                <AdminPage />
-              }
-            />
+      <div id="main-content" tabIndex={-1}>
+        <Routes>
+          <Route path="/" element={<HomePage />} />
+          <Route path="/catalog" element={<Navigate to="/" replace />} />
+          <Route
+            path="/library"
+            element={<Navigate to="/?scope=library" replace />}
+          />
+          <Route path="/catalog/:id" element={<WorkDetailsPage />} />
+          <Route path="/calendar" element={<CalendarPage />} />
+          <Route path="/stats" element={<StatsPage />} />
+          <Route path="/recommendations" element={<RecommendationsPage />} />
+          <Route
+            path="/catch-up"
+            element={<Navigate to="/?scope=library" replace />}
+          />
+          <Route path="/reminders" element={<RemindersPage />} />
+          {user.role === "admin" && (
+            <Route path="/admin" element={<AdminPage />} />
           )}
-
-        <Route
-          path="*"
-          element={
-            <Navigate
-              to="/catalog"
-              replace
-            />
-          }
-        />
-      </Routes>
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </div>
     </>
   );
 }
-
 export default App;

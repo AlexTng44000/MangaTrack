@@ -104,3 +104,8 @@ ALTER TABLE library_entries
         CHECK (
             resume_chapter > 0
         );
+
+-- Optional AniList ID: keep existing general reminders and associate new ones with a work.
+ALTER TABLE reminders
+    ADD COLUMN IF NOT EXISTS catalog_item_id INTEGER
+        CHECK (catalog_item_id > 0);

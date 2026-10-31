@@ -4,6 +4,7 @@ import {
 
 export const createReminderSchema =
     z.object({
+        catalogItemId: z.number().int().positive().optional(),
         message:
             z.string()
                 .trim()

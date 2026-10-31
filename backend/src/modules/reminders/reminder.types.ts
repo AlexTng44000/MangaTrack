@@ -5,6 +5,7 @@ export type ReminderStatus =
     | 'cancelled';
 
 export interface Reminder {
+    catalogItemId: number | null;
     id: number;
     userId: number;
     message: string;
@@ -15,6 +16,7 @@ export interface Reminder {
 }
 
 export interface CreateReminderInput {
+    catalogItemId?: number;
     message: string;
     scheduledAt?: string;
 }

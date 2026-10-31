@@ -1,10 +1,34 @@
-# MangaTrack
+# MyMangaTracker
 
-MangaTrack est une application web permettant de suivre ses mangas et anime, gérer sa progression, découvrir de nouvelles œuvres et organiser son visionnage ou sa lecture.
+MyMangaTracker est une application web permettant de suivre ses mangas et anime, gérer sa progression, découvrir de nouvelles œuvres et organiser son visionnage ou sa lecture.
 
 Le projet a été réalisé dans le cadre du cours d’architecture logicielle en M1 à l’ESGI.
 
 L’objectif est de proposer une application fonctionnelle tout en mettant en œuvre une architecture modulaire, des ports et adaptateurs, des traitements asynchrones et plusieurs scénarios de qualité.
+
+## Nouvelle interface
+
+Le site s’appelle désormais **MyMangaTracker**. L’accueil réunit le catalogue et la bibliothèque avec des filtres de recherche, de type, de genre, de statut et de favoris. Le suivi, le plan de rattrapage et les rappels sont accessibles directement sur les fiches manga/anime. L’interface propose le français et l’anglais, avec une préférence conservée sur l’appareil, et une navigation adaptée au mobile.
+
+Pour une base PostgreSQL existante, appliquer la migration avant de lancer cette version du backend :
+
+```bash
+docker compose exec -T postgres psql -U mangatrack -d mangatrack -v ON_ERROR_STOP=1 -f - < backend/src/infrastructure/database/migrations/20261031_reminder_work.sql
+```
+
+Les nouvelles bases incluent cette colonne dans `init.sql`. Les rappels existants sont conservés ; seuls les nouveaux rappels créés depuis une fiche ou le calendrier sont associés à une œuvre. L’historique global reste accessible depuis les fiches.
+
+Tests de l’interface :
+
+```bash
+cd frontend
+npm ci
+# Si aucun Chromium compatible n’est disponible :
+npx playwright install chromium
+npm run test:ui
+```
+
+Les tests navigateur utilisent des réponses API simulées pour être indépendants d’AniList et de la base. Ils couvrent les filtres, le suivi, les rappels, les langues, les anciennes URL et les écrans de 320 à 1 440 pixels. La compilation et le lint restent disponibles avec `npm run build` et `npm run lint`. Les synopsis et titres issus d’AniList restent dans la langue fournie par la source.
 
 ---
 
