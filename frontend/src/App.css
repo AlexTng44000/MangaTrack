@@ -4765,15 +4765,13 @@ body {
 .relations-empty { color:#655772; }
 .work-tool input, .work-tool select, .work-tool textarea, .home-filters select, .language-picker select { color-scheme:dark; }
 
-/* Keep discovery controls within reach without covering the list. */
-.home-page { overflow-anchor: none; }
-.filter-sentinel { height:1px; }
-.home-filters { position:sticky; top:12px; z-index:40; box-shadow:0 10px 26px rgba(16,8,29,.22); }
-.filter-pin-toolbar { display:flex; align-items:center; justify-content:space-between; gap:12px; }
-.home-filters-pinned { padding:12px 18px; }
-.home-filters-pinned .home-filter-controls { display:none; }
-.home-filters-pinned.home-filters-expanded .home-filter-controls { display:block; margin-top:16px; max-height:65dvh; overflow-y:auto; overscroll-behavior:contain; }
-.home-filters .filter-pin-toolbar button { background:#7139d5; border-color:#b590ff; color:#fff; }
+/* Leave the original filters in normal flow: docking never moves the cards. */
+.home-filter-anchor { margin-bottom:24px; }
+.home-filter-anchor .home-filters { position:static; margin:0; box-shadow:0 10px 26px rgba(16,8,29,.22); }
+.floating-filter-bar { position:fixed; top:12px; z-index:42; display:flex; justify-content:space-between; align-items:center; gap:12px; padding:12px 18px; border:1px solid #9068cb; border-radius:14px; background:#21162e; color:#fff; box-shadow:0 8px 22px rgba(16,8,29,.25); opacity:0; visibility:hidden; transform:translateY(-8px); transition:opacity .18s ease, transform .18s ease, visibility .18s; pointer-events:none; }
+.floating-filter-bar-visible { opacity:1; visibility:visible; transform:translateY(0); pointer-events:auto; }
+.floating-filter-bar button { background:#7139d5; border-color:#b590ff; color:#fff; }
+.home-filter-anchor .home-filters-popover { position:fixed; top:90px; z-index:41; max-height:calc(100dvh - 110px); overflow-y:auto; overscroll-behavior:contain; border:1px solid #9068cb; box-shadow:0 12px 28px rgba(16,8,29,.3); }
 .home-page .load-more .load-more-button { background:#6626d4; border:2px solid #6626d4; color:#fff; font-weight:800; box-shadow:0 6px 18px rgba(102,38,212,.25); min-width:240px; }
 .home-page .load-more .load-more-button:hover:not(:disabled) { background:#4f1ba9; border-color:#4f1ba9; color:#fff; }
 .home-page .load-more .load-more-button:disabled { opacity:.7; }
@@ -4802,9 +4800,8 @@ button.remove-library-button:hover:not(:disabled) { color:#fff; background:#872f
 .episode-seen { color:#8ff0bb; font-weight:700; }
 .viewing-sync-note { margin-top:18px; color:#cfbedf; font-size:14px; line-height:1.6; }
 @media(max-width:760px) {
- .home-filters { top:6px; }
- .home-filters-pinned { padding:10px 12px; }
- .home-filters-pinned.home-filters-expanded .home-filter-controls { max-height:60dvh; }
+ .floating-filter-bar { top:6px; padding:10px 12px; }
+ .home-filter-anchor .home-filters-popover { top:80px; max-height:calc(100dvh - 100px); }
  .work-shortcuts { display:grid; grid-template-columns:minmax(0,1fr); }
  .work-shortcuts a, .next-episode-panel a { justify-content:center; text-align:center; }
  .next-episode-panel { flex-direction:column; align-items:stretch; }

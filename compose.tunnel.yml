@@ -1,0 +1,14 @@
+# Temporary sharing of the existing local development stack. No account/token needed.
+services:
+  frontend:
+    environment:
+      VITE_API_URL: /api
+      VITE_API_PROXY_TARGET: http://backend:3354
+      NO_PROXY: ${NO_PROXY:-localhost,127.0.0.1},backend
+  tunnel:
+    image: cloudflare/cloudflared:latest
+    command: [tunnel, --no-autoupdate, --protocol, http2, --url, 'http://frontend:5173', --http-host-header, localhost]
+    environment:
+      NO_PROXY: ${NO_PROXY:-localhost,127.0.0.1},frontend
+    depends_on: [frontend]
+    restart: 'no'

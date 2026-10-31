@@ -153,9 +153,12 @@ async function setup(
 
 async function openFilters(page: Page) {
   await expect(async () => {
-    const edit = page.getByRole('button', { name: 'Modifier les filtres', exact: true });
+    const edit = page.getByRole("button", {
+      name: "Modifier les filtres",
+      exact: true,
+    });
     if (await edit.isVisible()) await edit.click();
-    await expect(page.getByLabel('Rechercher un titre')).toBeVisible();
+    await expect(page.getByLabel("Rechercher un titre")).toBeVisible();
   }).toPass({ timeout: 5000 });
 }
 function tracked(catalogItemId: number, progress = 0): LibraryEntry {
@@ -199,7 +202,9 @@ test("one home filters discovery and library; old library links still work", asy
   await expect(page.locator(".home-card")).toHaveCount(1);
   await expect(page).toHaveURL(/scope=library/);
   await openFilters(page);
-  await page.getByRole("button", { name: "Tout explorer", exact: true }).click();
+  await page
+    .getByRole("button", { name: "Tout explorer", exact: true })
+    .click();
   await expect(page.locator(".home-card")).toHaveCount(2);
   await openFilters(page);
   await page.getByLabel("Rechercher un titre").fill("Blue");
@@ -458,7 +463,9 @@ for (const width of [375, 1440])
     await expect(
       page.getByRole("button", { name: "Modifier les filtres", exact: true }),
     ).toBeVisible();
-    const bounds = await page.locator(".home-filters").boundingBox();
+    const bar = page.locator(".floating-filter-bar");
+    await expect(bar).toHaveCSS("transform", "matrix(1, 0, 0, 1, 0, 0)");
+    const bounds = await bar.boundingBox();
     expect(bounds!.y).toBeGreaterThanOrEqual(0);
     expect(bounds!.y).toBeLessThan(20);
     expect(bounds!.height).toBeLessThan(110);
@@ -469,8 +476,8 @@ for (const width of [375, 1440])
     await expect(page.locator(".home-card")).toContainText("Work 31");
     await expect(page).toHaveURL(/q=Work\+31/);
     await page.evaluate(() => scrollTo(0, 0));
-    await expect(page.locator(".home-filters")).not.toHaveClass(
-      /home-filters-pinned/,
+    await expect(page.locator(".floating-filter-bar")).not.toHaveClass(
+      /floating-filter-bar-visible/,
     );
     await expect(page.getByLabel("Rechercher un titre")).toBeVisible();
     const loadMore = page.getByRole("button", {
@@ -598,40 +605,138 @@ test("a manga highlights its tracked anime and the manually saved resume chapter
   ).toBeVisible();
 });
 
-
-test('load more appends the next page and disappears when the catalogue ends', async ({ page }) => {
+test("load more appends the next page and disappears when the catalogue ends", async ({
+  page,
+}) => {
   await setup(page);
-  await page.route('http://localhost:3354/catalog?**', async route => {
-    const pageNumber = Number(new URL(route.request().url()).searchParams.get('page'));
-    await route.fulfill({ json: { items: [works[pageNumber === 1 ? 0 : 1]], page: pageNumber, hasNextPage: pageNumber === 1 } });
+  await page.route("http://localhost:3354/catalog?**", async (route) => {
+    const pageNumber = Number(
+      new URL(route.request().url()).searchParams.get("page"),
+    );
+    await route.fulfill({
+      json: {
+        items: [works[pageNumber === 1 ? 0 : 1]],
+        page: pageNumber,
+        hasNextPage: pageNumber === 1,
+      },
+    });
   });
-  await page.goto('/');
-  await expect(page.locator('.home-card')).toHaveCount(1);
-  await page.getByRole('button', { name: 'Afficher plus d’œuvres', exact: true }).click();
-  await expect(page.locator('.home-card')).toHaveCount(2);
-  await expect(page.getByRole('button', { name: 'Afficher plus d’œuvres', exact: true })).toHaveCount(0);
+  await page.goto("/");
+  await expect(page.locator(".home-card")).toHaveCount(1);
+  await page
+    .getByRole("button", { name: "Afficher plus d’œuvres", exact: true })
+    .click();
+  await expect(page.locator(".home-card")).toHaveCount(2);
+  await expect(
+    page.getByRole("button", { name: "Afficher plus d’œuvres", exact: true }),
+  ).toHaveCount(0);
 });
 
-
-test('reset clears library filters while keeping the library selected', async ({ page }) => {
+test("reset clears library filters while keeping the library selected", async ({
+  page,
+}) => {
   await setup(page, { library: [tracked(1)] });
-  await page.goto('/?scope=library&q=Missing&type=manga&genre=Drama&status=termine&favorite=1&sort=title');
-  await expect(page.locator('.home-card')).toHaveCount(0);
+  await page.goto(
+    "/?scope=library&q=Missing&type=manga&genre=Drama&status=termine&favorite=1&sort=title",
+  );
+  await expect(page.locator(".home-card")).toHaveCount(0);
   await openFilters(page);
-  await page.getByRole('button', { name: 'Réinitialiser les filtres', exact: true }).click();
+  await page
+    .getByRole("button", { name: "Réinitialiser les filtres", exact: true })
+    .click();
   await expect(page).toHaveURL(/\/\?scope=library$/);
-  await expect(page.getByRole('button', { name: 'Ma bibliothèque', exact: true })).toHaveAttribute('aria-pressed', 'true');
-  await expect(page.locator('.home-card')).toHaveCount(1);
-  await expect(page.locator('.home-card')).toContainText('Frieren');
+  await expect(
+    page.getByRole("button", { name: "Ma bibliothèque", exact: true }),
+  ).toHaveAttribute("aria-pressed", "true");
+  await expect(page.locator(".home-card")).toHaveCount(1);
+  await expect(page.locator(".home-card")).toContainText("Frieren");
 });
 
-test('catalogue failures show a prominent accessible error', async ({ page }) => {
+test("catalogue failures show a prominent accessible error", async ({
+  page,
+}) => {
   await setup(page);
-  await page.route('http://localhost:3354/catalog?**', route => route.fulfill({ status: 503, json: { error: 'Unavailable' } }));
-  await page.goto('/');
-  const alert = page.getByRole('alert');
+  await page.route("http://localhost:3354/catalog?**", (route) =>
+    route.fulfill({ status: 503, json: { error: "Unavailable" } }),
+  );
+  await page.goto("/");
+  const alert = page.getByRole("alert");
   await expect(alert).toBeVisible();
-  await expect(alert).toContainText('Impossible de charger les œuvres');
-  const colors = await alert.evaluate(element => ({ text: getComputedStyle(element).color, background: getComputedStyle(element).backgroundColor, border: getComputedStyle(element).borderLeftWidth }));
-  expect(colors).toEqual({ text: 'rgb(133, 21, 35)', background: 'rgb(255, 240, 241)', border: '6px' });
+  await expect(alert).toContainText("Impossible de charger les œuvres");
+  const colors = await alert.evaluate((element) => ({
+    text: getComputedStyle(element).color,
+    background: getComputedStyle(element).backgroundColor,
+    border: getComputedStyle(element).borderLeftWidth,
+  }));
+  expect(colors).toEqual({
+    text: "rgb(133, 21, 35)",
+    background: "rgb(255, 240, 241)",
+    border: "6px",
+  });
 });
+
+for (const width of [375, 1440])
+  test(`docking filters never changes document or card positions at ${width}px`, async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width, height: 900 });
+    const items: CatalogItem[] = Array.from({ length: 24 }, (_, index) => ({
+      id: index + 1,
+      title: `Work ${index}`,
+      type: "anime",
+      genres: [],
+      total: 12,
+    }));
+    await setup(page, { items });
+    await page.goto("/");
+    await expect(page.locator(".home-card")).toHaveCount(24);
+    // Measure docking independently from the one-off page-entry animation.
+    await expect(page.locator('.home-page')).toHaveCSS('transform', 'none');
+    const initial = await page.evaluate(() => ({
+      height: document.documentElement.scrollHeight,
+      cardTop:
+        document.querySelector(".home-grid")!.getBoundingClientRect().top +
+        scrollY,
+      anchorBottom:
+        document.querySelector(".home-filter-anchor")!.getBoundingClientRect()
+          .bottom + scrollY,
+    }));
+    for (const delta of [-30, -4, 4, 20, 80, 20, 4, -4, -30]) {
+      await page.evaluate(async (y) => {
+        scrollTo(0, y);
+        await new Promise((resolve) =>
+          requestAnimationFrame(() => requestAnimationFrame(resolve)),
+        );
+      }, initial.anchorBottom + delta);
+      const current = await page.evaluate(() => ({
+        height: document.documentElement.scrollHeight,
+        cardTop:
+          document.querySelector(".home-grid")!.getBoundingClientRect().top +
+          scrollY,
+      }));
+      expect(current.height).toBe(initial.height);
+      expect(Math.abs(current.cardTop - initial.cardTop)).toBeLessThanOrEqual(
+        1,
+      );
+    }
+    await page.evaluate((y) => scrollTo(0, y + 100), initial.anchorBottom);
+    const edit = page.getByRole("button", {
+      name: "Modifier les filtres",
+      exact: true,
+    });
+    await expect(edit).toBeVisible();
+    await edit.click();
+    await expect(page.locator(".home-filters-popover")).toBeVisible();
+    const opened = await page.evaluate(() => ({
+      height: document.documentElement.scrollHeight,
+      cardTop:
+        document.querySelector(".home-grid")!.getBoundingClientRect().top +
+        scrollY,
+    }));
+    expect(opened.height).toBe(initial.height);
+    expect(Math.abs(opened.cardTop - initial.cardTop)).toBeLessThanOrEqual(1);
+    await page.getByRole("button", { name: "Réduire les filtres" }).click();
+    expect(
+      await page.evaluate(() => document.documentElement.scrollHeight),
+    ).toBe(initial.height);
+  });

@@ -32,6 +32,10 @@ Les tests navigateur utilisent des réponses API simulées pour être indépenda
 
 ---
 
+## Test rapide avec des amis depuis Windows
+
+Le [guide Cloudflare Tunnel](docs/cloudflare-tunnel.md) permet de partager temporairement l’application locale sans créer de compte cloud, avec une seule URL pour le site et l’API. Docker exécute le tunnel et les données restent sur le PC.
+
 ## Déploiement sur une VM
 
 Une configuration de production avec Caddy/HTTPS, API compilée, PostgreSQL et Redis privés est disponible dans `compose.production.yml`. Le [guide VM](docs/deploy-free-vm.md) explique la création du compte/serveur, le DNS, la configuration et le lancement automatisé. Cette configuration est séparée du Docker Compose de développement. Les e-mails sont optionnels et nécessitent des identifiants SMTP réels et l’activation du profil `notifications`.

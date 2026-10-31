@@ -38,40 +38,56 @@ export function HomePage() {
     abandonne: t("Abandonné"),
   };
   const generation = useRef(0);
-  const filterSentinel = useRef<HTMLDivElement>(null);
+  const filterAnchor = useRef<HTMLDivElement>(null);
   const filterPanel = useRef<HTMLElement>(null);
-  const [filterReservedSpace, setFilterReservedSpace] = useState(0);
+  const [filterLayout, setFilterLayout] = useState({
+    left: 0,
+    width: 0,
+    height: 0,
+  });
   const [filtersPinned, setFiltersPinned] = useState(false);
   const [filtersExpanded, setFiltersExpanded] = useState(false);
   useEffect(() => {
-    const sentinel = filterSentinel.current;
+    const anchor = filterAnchor.current;
     const panel = filterPanel.current;
-    if (!sentinel || !panel) return;
-    let pinned = false;
-    let fullHeight = panel.offsetHeight;
-    const resizeObserver = new ResizeObserver(() => {
-      if (!pinned) fullHeight = panel.offsetHeight;
-      setFilterReservedSpace(
-        pinned ? Math.max(0, fullHeight - panel.offsetHeight) : 0,
-      );
-    });
+    if (!anchor || !panel) return;
+    const measure = () => {
+      const bounds = anchor.getBoundingClientRect();
+      setFilterLayout((current) => {
+        const next = {
+          left: bounds.left,
+          width: bounds.width,
+          // A floating popover must not change the document's reserved height.
+          height: panel.classList.contains("home-filters-popover")
+            ? current.height
+            : panel.offsetHeight,
+        };
+        return current.left === next.left &&
+          current.width === next.width &&
+          current.height === next.height
+          ? current
+          : next;
+      });
+    };
+    const resizeObserver = new ResizeObserver(measure);
+    resizeObserver.observe(anchor);
     resizeObserver.observe(panel);
     const observer = new IntersectionObserver(
       ([entry]) => {
-        const next = !entry.isIntersecting && entry.boundingClientRect.top < 12;
-        if (next === pinned) return;
-        pinned = next;
-        // Preserve document height while collapsing. Otherwise short result lists
-        // clamp the scroll position and repeatedly pin/unpin the controls.
-        setFilterReservedSpace(next ? fullHeight : 0);
-        setFiltersPinned(next);
+        const pinned =
+          !entry.isIntersecting && entry.boundingClientRect.bottom <= 12;
+        setFiltersPinned(pinned);
+        if (!pinned) setFiltersExpanded(false);
       },
       { rootMargin: "-12px 0px 0px 0px" },
     );
-    observer.observe(sentinel);
+    observer.observe(anchor);
+    window.addEventListener("resize", measure);
+    measure();
     return () => {
       observer.disconnect();
       resizeObserver.disconnect();
+      window.removeEventListener("resize", measure);
     };
   }, []);
   const [params, setParams] = useSearchParams();
@@ -252,149 +268,163 @@ export function HomePage() {
         </span>
       </section>
       <div
-        ref={filterSentinel}
-        className="filter-sentinel"
-        aria-hidden="true"
-      />
-      <section
-        ref={filterPanel}
-        className={`home-filters ${filtersPinned ? "home-filters-pinned" : ""} ${filtersExpanded ? "home-filters-expanded" : ""}`}
-        aria-label={t("Filtres des œuvres")}
+        ref={filterAnchor}
+        className="home-filter-anchor"
+        style={
+          filtersPinned && filtersExpanded
+            ? { height: filterLayout.height }
+            : undefined
+        }
       >
-        {filtersPinned && (
-          <div className="filter-pin-toolbar">
-            <strong>{t("Filtres")}</strong>
-            <button
-              type="button"
-              aria-expanded={filtersExpanded}
-              aria-controls="home-filter-controls"
-              onClick={() => setFiltersExpanded((current) => !current)}
-            >
-              {filtersExpanded
-                ? t("Réduire les filtres")
-                : t("Modifier les filtres")}
-            </button>
-          </div>
-        )}
-        <div id="home-filter-controls" className="home-filter-controls">
-          <div className="scope-tabs" aria-label="Collection">
-            <button
-              type="button"
-              aria-pressed={!libraryMode}
-              onClick={() => filter("scope", "all")}
-            >
-              {t("Tout explorer")}
-            </button>
-            <button
-              type="button"
-              aria-pressed={libraryMode}
-              onClick={() => filter("scope", "library")}
-            >
-              {t("Ma bibliothèque")}
-            </button>
-          </div>
-          <form onSubmit={submit} className="home-search">
-            <label htmlFor="home-query" className="sr-only">
-              {t("Rechercher un titre")}
-            </label>
-            <input
-              id="home-query"
-              type="search"
-              name="q"
-              key={query}
-              defaultValue={query}
-              placeholder={t("Rechercher un manga ou un anime…")}
-            />
-            <button type="submit">{t("Rechercher")}</button>
-          </form>
-          <div className="home-filter-grid">
-            <label>
-              Type
-              <select
-                value={type}
-                onChange={(event) => filter("type", event.target.value)}
+        <section
+          ref={filterPanel}
+          className={`home-filters ${filtersPinned && filtersExpanded ? "home-filters-popover" : ""}`}
+          style={
+            filtersPinned && filtersExpanded
+              ? { left: filterLayout.left, width: filterLayout.width }
+              : undefined
+          }
+          aria-label={t("Filtres des œuvres")}
+        >
+          <div id="home-filter-controls" className="home-filter-controls">
+            <div className="scope-tabs" aria-label="Collection">
+              <button
+                type="button"
+                aria-pressed={!libraryMode}
+                onClick={() => filter("scope", "all")}
               >
-                <option value="">{t("Tous les types")}</option>
-                <option value="anime">Anime</option>
-                <option value="manga">Manga</option>
-              </select>
-            </label>
-            <label>
-              {t("Genre")}
-              <select
-                value={genre}
-                onChange={(event) => filter("genre", event.target.value)}
+                {t("Tout explorer")}
+              </button>
+              <button
+                type="button"
+                aria-pressed={libraryMode}
+                onClick={() => filter("scope", "library")}
               >
-                <option value="">{t("Tous les genres")}</option>
-                {genres.map((genre) => (
-                  <option key={genre} value={genre}>
-                    {genreLabel(genre)}
+                {t("Ma bibliothèque")}
+              </button>
+            </div>
+            <form onSubmit={submit} className="home-search">
+              <label htmlFor="home-query" className="sr-only">
+                {t("Rechercher un titre")}
+              </label>
+              <input
+                id="home-query"
+                type="search"
+                name="q"
+                key={query}
+                defaultValue={query}
+                placeholder={t("Rechercher un manga ou un anime…")}
+              />
+              <button type="submit">{t("Rechercher")}</button>
+            </form>
+            <div className="home-filter-grid">
+              <label>
+                Type
+                <select
+                  value={type}
+                  onChange={(event) => filter("type", event.target.value)}
+                >
+                  <option value="">{t("Tous les types")}</option>
+                  <option value="anime">Anime</option>
+                  <option value="manga">Manga</option>
+                </select>
+              </label>
+              <label>
+                {t("Genre")}
+                <select
+                  value={genre}
+                  onChange={(event) => filter("genre", event.target.value)}
+                >
+                  <option value="">{t("Tous les genres")}</option>
+                  {genres.map((genre) => (
+                    <option key={genre} value={genre}>
+                      {genreLabel(genre)}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label>
+                {t("Statut")}
+                <select
+                  value={status}
+                  onChange={(event) => filter("status", event.target.value)}
+                >
+                  <option value="">{t("Tous les statuts")}</option>
+                  {Object.entries(statuses).map(([value, label]) => (
+                    <option key={value} value={value}>
+                      {label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label>
+                {t("Trier par")}
+                <select
+                  value={libraryMode && sort !== "title" ? "popularity" : sort}
+                  onChange={(event) => filter("sort", event.target.value)}
+                >
+                  <option value="popularity">
+                    {libraryMode ? t("Derniers ajouts") : t("Popularité")}
                   </option>
-                ))}
-              </select>
-            </label>
-            <label>
-              {t("Statut")}
-              <select
-                value={status}
-                onChange={(event) => filter("status", event.target.value)}
+                  {!libraryMode && (
+                    <>
+                      <option value="trending">
+                        {t("Tendances du moment")}
+                      </option>
+                      <option value="score">{t("Meilleures notes")}</option>
+                      <option value="recent">{t("Plus récents")}</option>
+                    </>
+                  )}
+                  <option value="title">{t("Titre A-Z")}</option>
+                </select>
+              </label>
+            </div>
+            <div className="home-filter-footer">
+              <button
+                type="button"
+                aria-pressed={favorite}
+                onClick={() => filter("favorite", favorite ? "" : "1")}
               >
-                <option value="">{t("Tous les statuts")}</option>
-                {Object.entries(statuses).map(([value, label]) => (
-                  <option key={value} value={value}>
-                    {label}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label>
-              {t("Trier par")}
-              <select
-                value={libraryMode && sort !== "title" ? "popularity" : sort}
-                onChange={(event) => filter("sort", event.target.value)}
+                {t("♥ Favoris")}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setParams(libraryMode ? { scope: "library" } : {});
+                }}
               >
-                <option value="popularity">
-                  {libraryMode ? t("Derniers ajouts") : t("Popularité")}
-                </option>
-                {!libraryMode && (
-                  <>
-                    <option value="trending">{t("Tendances du moment")}</option>
-                    <option value="score">{t("Meilleures notes")}</option>
-                    <option value="recent">{t("Plus récents")}</option>
-                  </>
+                {t("Réinitialiser les filtres")}
+              </button>
+              <span role="status">
+                {t(
+                  visible.length === 1
+                    ? "{count} œuvre affichée"
+                    : "{count} œuvres affichées",
+                  { count: visible.length },
                 )}
-                <option value="title">{t("Titre A-Z")}</option>
-              </select>
-            </label>
+              </span>
+            </div>
           </div>
-          <div className="home-filter-footer">
-            <button
-              type="button"
-              aria-pressed={favorite}
-              onClick={() => filter("favorite", favorite ? "" : "1")}
-            >
-              {t("♥ Favoris")}
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setParams(libraryMode ? { scope: "library" } : {});
-              }}
-            >
-              {t("Réinitialiser les filtres")}
-            </button>
-            <span role="status">
-              {t(
-                visible.length === 1
-                  ? "{count} œuvre affichée"
-                  : "{count} œuvres affichées",
-                { count: visible.length },
-              )}
-            </span>
-          </div>
-        </div>
-      </section>
-      <div aria-hidden="true" style={{ height: filterReservedSpace }} />
+        </section>
+      </div>
+      <div
+        className={`floating-filter-bar ${filtersPinned ? "floating-filter-bar-visible" : ""}`}
+        style={{ left: filterLayout.left, width: filterLayout.width }}
+        aria-hidden={!filtersPinned}
+        inert={!filtersPinned}
+      >
+        <strong>{t("Filtres")}</strong>
+        <button
+          type="button"
+          aria-expanded={filtersExpanded}
+          aria-controls="home-filter-controls"
+          onClick={() => setFiltersExpanded((current) => !current)}
+        >
+          {filtersExpanded
+            ? t("Réduire les filtres")
+            : t("Modifier les filtres")}
+        </button>
+      </div>
       {error && (
         <p className="error-message" role="alert">
           {t(error)}

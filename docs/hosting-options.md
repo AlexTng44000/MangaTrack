@@ -4,7 +4,7 @@
 
 [Cloudflare Tunnel](https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/) permet d’exposer une application locale via HTTPS sans ouvrir de port sur ta box. C’est une piste adaptée à une démonstration ponctuelle : le PC, Docker et le tunnel doivent rester allumés. Le service n’héberge pas la base à ta place.
 
-Il faut exposer le frontend **et** rendre son API accessible : les navigateurs de tes amis ne peuvent pas utiliser `http://localhost:3354`, qui désigne leur propre PC. Utiliser une origine commune avec un proxy `/api`, ou une URL HTTPS publique d’API et configurer `VITE_API_URL` ainsi que `CORS_ORIGIN`. Vite peut aussi nécessiter l’autorisation explicite du domaine du tunnel ; ne pas autoriser arbitrairement tous les domaines.
+Une [configuration Docker prête à lancer sous Windows](cloudflare-tunnel.md) est fournie dans `compose.tunnel.yml`. Elle utilise une origine commune avec un proxy `/api` : les navigateurs des amis n’appellent jamais leur propre `localhost:3354`. Les contrôles d’hôtes Vite restent activés. Le guide donne les commandes de lancement, de vérification et d’arrêt. Aucune VM n’est nécessaire pour cet essai.
 
 Pour un test public, conserver l’authentification, choisir une vraie clé JWT aléatoire et garder les ports PostgreSQL/Redis privés. Ne jamais intégrer les secrets dans le frontend ou dans Git.
 
