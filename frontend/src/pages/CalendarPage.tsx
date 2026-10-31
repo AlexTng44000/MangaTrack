@@ -1,9 +1,15 @@
+import { RemoveLibraryButton } from "../components/RemoveLibraryButton";
+import type { LibraryEntry } from "../types/library";
 import { t, locale, useLanguage } from "../i18n";
 import { useEffect, useState } from "react";
 
 import { useNavigate } from "react-router-dom";
 
-import { createReminder, getCalendarReleases } from "../api/mangatrack.api";
+import {
+  createReminder,
+  getCalendarReleases,
+  getLibrary,
+} from "../api/mangatrack.api";
 
 import type { CalendarRelease } from "../types/catalog";
 
@@ -64,6 +70,7 @@ export function CalendarPage() {
   useLanguage();
   const navigate = useNavigate();
 
+  const [library, setLibrary] = useState<LibraryEntry[]>([]);
   const [releases, setReleases] = useState<CalendarRelease[]>([]);
 
   const [loading, setLoading] = useState(true);
@@ -77,10 +84,11 @@ export function CalendarPage() {
   useEffect(() => {
     let cancelled = false;
 
-    getCalendarReleases()
-      .then((data) => {
+    Promise.all([getCalendarReleases(), getLibrary()])
+      .then(([data, entries]) => {
         if (!cancelled) {
           setReleases(data);
+          setLibrary(entries);
         }
       })
       .catch((err) => {
@@ -184,17 +192,13 @@ export function CalendarPage() {
           <article className="calendar-summary-card">
             <strong>{releases.length}</strong>
 
-            <span>
-              {t("sortie")} {releases.length > 1 ? "s" : ""}
-            </span>
+            <span>{t(releases.length > 1 ? "sorties" : "sortie")}</span>
           </article>
 
           <article className="calendar-summary-card">
             <strong>{groupedEntries.length}</strong>
 
-            <span>
-              {t("jour")} {groupedEntries.length > 1 ? "s" : ""}
-            </span>
+            <span>{t(groupedEntries.length > 1 ? "jours" : "jour")}</span>
           </article>
         </div>
       </section>
@@ -232,13 +236,16 @@ export function CalendarPage() {
                   </div>
 
                   <span className="calendar-day-count">
-                    {dayReleases.length} {t("épisode")}{" "}
-                    {dayReleases.length > 1 ? "s" : ""}
+                    {dayReleases.length}{" "}
+                    {t(dayReleases.length > 1 ? "épisodes" : "épisode")}
                   </span>
                 </div>
 
                 <div className="calendar-releases">
                   {dayReleases.map((release) => {
+                    const entry = library.find(
+                      (entry) => entry.catalogItemId === release.mediaId,
+                    );
                     const releaseKey = getReleaseKey(release);
 
                     const releaseDate = new Date(release.airingAt);
@@ -295,6 +302,20 @@ export function CalendarPage() {
                                 : t("Créer un rappel")}
                             </button>
                           </div>
+                          {entry && (
+                            <RemoveLibraryButton
+                              entryId={entry.id}
+                              title={release.title}
+                              onRemoved={() =>
+                                setLibrary((current) =>
+                                  current.filter(
+                                    (item) => item.id !== entry.id,
+                                  ),
+                                )
+                              }
+                              onError={setError}
+                            />
+                          )}
                         </div>
                       </article>
                     );

@@ -1,3 +1,4 @@
+import { RemoveLibraryButton } from "../components/RemoveLibraryButton";
 import { t, genreLabel, useLanguage } from "../i18n";
 import { useEffect, useRef, useState } from "react";
 import type { FormEvent } from "react";
@@ -37,6 +38,42 @@ export function HomePage() {
     abandonne: t("Abandonné"),
   };
   const generation = useRef(0);
+  const filterSentinel = useRef<HTMLDivElement>(null);
+  const filterPanel = useRef<HTMLElement>(null);
+  const [filterReservedSpace, setFilterReservedSpace] = useState(0);
+  const [filtersPinned, setFiltersPinned] = useState(false);
+  const [filtersExpanded, setFiltersExpanded] = useState(false);
+  useEffect(() => {
+    const sentinel = filterSentinel.current;
+    const panel = filterPanel.current;
+    if (!sentinel || !panel) return;
+    let pinned = false;
+    let fullHeight = panel.offsetHeight;
+    const resizeObserver = new ResizeObserver(() => {
+      if (!pinned) fullHeight = panel.offsetHeight;
+      setFilterReservedSpace(
+        pinned ? Math.max(0, fullHeight - panel.offsetHeight) : 0,
+      );
+    });
+    resizeObserver.observe(panel);
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        const next = !entry.isIntersecting && entry.boundingClientRect.top < 12;
+        if (next === pinned) return;
+        pinned = next;
+        // Preserve document height while collapsing. Otherwise short result lists
+        // clamp the scroll position and repeatedly pin/unpin the controls.
+        setFilterReservedSpace(next ? fullHeight : 0);
+        setFiltersPinned(next);
+      },
+      { rootMargin: "-12px 0px 0px 0px" },
+    );
+    observer.observe(sentinel);
+    return () => {
+      observer.disconnect();
+      resizeObserver.disconnect();
+    };
+  }, []);
   const [params, setParams] = useSearchParams();
   const [library, setLibrary] = useState<LibraryEntry[]>([]);
   const [items, setItems] = useState<CatalogItem[]>([]);
@@ -214,123 +251,150 @@ export function HomePage() {
           <strong>{library.length}</strong> {t("dans ta bibliothèque")}
         </span>
       </section>
-      <section className="home-filters" aria-label={t("Filtres des œuvres")}>
-        <div className="scope-tabs" aria-label="Collection">
-          <button
-            type="button"
-            aria-pressed={!libraryMode}
-            onClick={() => filter("scope", "all")}
-          >
-            {t("Tout explorer")}
-          </button>
-          <button
-            type="button"
-            aria-pressed={libraryMode}
-            onClick={() => filter("scope", "library")}
-          >
-            {t("Ma bibliothèque")}
-          </button>
-        </div>
-        <form onSubmit={submit} className="home-search">
-          <label htmlFor="home-query" className="sr-only">
-            {t("Rechercher un titre")}
-          </label>
-          <input
-            id="home-query"
-            type="search"
-            name="q"
-            key={query}
-            defaultValue={query}
-            placeholder={t("Rechercher un manga ou un anime…")}
-          />
-          <button type="submit">{t("Rechercher")}</button>
-        </form>
-        <div className="home-filter-grid">
-          <label>
-            Type
-            <select
-              value={type}
-              onChange={(event) => filter("type", event.target.value)}
+      <div
+        ref={filterSentinel}
+        className="filter-sentinel"
+        aria-hidden="true"
+      />
+      <section
+        ref={filterPanel}
+        className={`home-filters ${filtersPinned ? "home-filters-pinned" : ""} ${filtersExpanded ? "home-filters-expanded" : ""}`}
+        aria-label={t("Filtres des œuvres")}
+      >
+        {filtersPinned && (
+          <div className="filter-pin-toolbar">
+            <strong>{t("Filtres")}</strong>
+            <button
+              type="button"
+              aria-expanded={filtersExpanded}
+              aria-controls="home-filter-controls"
+              onClick={() => setFiltersExpanded((current) => !current)}
             >
-              <option value="">{t("Tous les types")}</option>
-              <option value="anime">Anime</option>
-              <option value="manga">Manga</option>
-            </select>
-          </label>
-          <label>
-            {t("Genre")}
-            <select
-              value={genre}
-              onChange={(event) => filter("genre", event.target.value)}
+              {filtersExpanded
+                ? t("Réduire les filtres")
+                : t("Modifier les filtres")}
+            </button>
+          </div>
+        )}
+        <div id="home-filter-controls" className="home-filter-controls">
+          <div className="scope-tabs" aria-label="Collection">
+            <button
+              type="button"
+              aria-pressed={!libraryMode}
+              onClick={() => filter("scope", "all")}
             >
-              <option value="">{t("Tous les genres")}</option>
-              {genres.map((genre) => (
-                <option key={genre} value={genre}>
-                  {genreLabel(genre)}
+              {t("Tout explorer")}
+            </button>
+            <button
+              type="button"
+              aria-pressed={libraryMode}
+              onClick={() => filter("scope", "library")}
+            >
+              {t("Ma bibliothèque")}
+            </button>
+          </div>
+          <form onSubmit={submit} className="home-search">
+            <label htmlFor="home-query" className="sr-only">
+              {t("Rechercher un titre")}
+            </label>
+            <input
+              id="home-query"
+              type="search"
+              name="q"
+              key={query}
+              defaultValue={query}
+              placeholder={t("Rechercher un manga ou un anime…")}
+            />
+            <button type="submit">{t("Rechercher")}</button>
+          </form>
+          <div className="home-filter-grid">
+            <label>
+              Type
+              <select
+                value={type}
+                onChange={(event) => filter("type", event.target.value)}
+              >
+                <option value="">{t("Tous les types")}</option>
+                <option value="anime">Anime</option>
+                <option value="manga">Manga</option>
+              </select>
+            </label>
+            <label>
+              {t("Genre")}
+              <select
+                value={genre}
+                onChange={(event) => filter("genre", event.target.value)}
+              >
+                <option value="">{t("Tous les genres")}</option>
+                {genres.map((genre) => (
+                  <option key={genre} value={genre}>
+                    {genreLabel(genre)}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label>
+              {t("Statut")}
+              <select
+                value={status}
+                onChange={(event) => filter("status", event.target.value)}
+              >
+                <option value="">{t("Tous les statuts")}</option>
+                {Object.entries(statuses).map(([value, label]) => (
+                  <option key={value} value={value}>
+                    {label}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label>
+              {t("Trier par")}
+              <select
+                value={libraryMode && sort !== "title" ? "popularity" : sort}
+                onChange={(event) => filter("sort", event.target.value)}
+              >
+                <option value="popularity">
+                  {libraryMode ? t("Derniers ajouts") : t("Popularité")}
                 </option>
-              ))}
-            </select>
-          </label>
-          <label>
-            {t("Statut")}
-            <select
-              value={status}
-              onChange={(event) => filter("status", event.target.value)}
+                {!libraryMode && (
+                  <>
+                    <option value="trending">{t("Tendances du moment")}</option>
+                    <option value="score">{t("Meilleures notes")}</option>
+                    <option value="recent">{t("Plus récents")}</option>
+                  </>
+                )}
+                <option value="title">{t("Titre A-Z")}</option>
+              </select>
+            </label>
+          </div>
+          <div className="home-filter-footer">
+            <button
+              type="button"
+              aria-pressed={favorite}
+              onClick={() => filter("favorite", favorite ? "" : "1")}
             >
-              <option value="">{t("Tous les statuts")}</option>
-              {Object.entries(statuses).map(([value, label]) => (
-                <option key={value} value={value}>
-                  {label}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label>
-            {t("Trier par")}
-            <select
-              value={libraryMode && sort !== "title" ? "popularity" : sort}
-              onChange={(event) => filter("sort", event.target.value)}
+              {t("♥ Favoris")}
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setParams({});
+              }}
             >
-              <option value="popularity">
-                {libraryMode ? t("Derniers ajouts") : t("Popularité")}
-              </option>
-              {!libraryMode && (
-                <>
-                  <option value="trending">{t("Tendances du moment")}</option>
-                  <option value="score">{t("Meilleures notes")}</option>
-                  <option value="recent">{t("Plus récents")}</option>
-                </>
+              {t("Réinitialiser les filtres")}
+            </button>
+            <span role="status">
+              {t(
+                visible.length === 1
+                  ? "{count} œuvre affichée"
+                  : "{count} œuvres affichées",
+                { count: visible.length },
               )}
-              <option value="title">{t("Titre A-Z")}</option>
-            </select>
-          </label>
-        </div>
-        <div className="home-filter-footer">
-          <button
-            type="button"
-            aria-pressed={favorite}
-            onClick={() => filter("favorite", favorite ? "" : "1")}
-          >
-            {t("♥ Favoris")}
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              setParams({});
-            }}
-          >
-            {t("Réinitialiser les filtres")}
-          </button>
-          <span role="status">
-            {t(
-              visible.length === 1
-                ? "{count} œuvre affichée"
-                : "{count} œuvres affichées",
-              { count: visible.length },
-            )}
-          </span>
+            </span>
+          </div>
         </div>
       </section>
+      <div aria-hidden="true" style={{ height: filterReservedSpace }} />
       {error && (
         <p className="error-message" role="alert">
           {t(error)}
@@ -407,6 +471,18 @@ export function HomePage() {
                   {entry ? t("Reprendre") : t("Voir la fiche")}{" "}
                   <span aria-hidden="true">↗</span>
                 </Link>
+                {entry && (
+                  <RemoveLibraryButton
+                    entryId={entry.id}
+                    title={item.title}
+                    onRemoved={() =>
+                      setLibrary((current) =>
+                        current.filter((item) => item.id !== entry.id),
+                      )
+                    }
+                    onError={setError}
+                  />
+                )}
                 {!entry && (
                   <button
                     type="button"
@@ -423,8 +499,14 @@ export function HomePage() {
       </div>
       {!libraryMode && more && (
         <div className="load-more">
-          <button type="button" disabled={loading} onClick={loadMore}>
-            {t("Afficher plus d’œuvres")}
+          <button
+            type="button"
+            className="load-more-button"
+            aria-busy={loading}
+            disabled={loading}
+            onClick={loadMore}
+          >
+            {loading ? t("Chargement...") : t("Afficher plus d’œuvres")}
           </button>
         </div>
       )}

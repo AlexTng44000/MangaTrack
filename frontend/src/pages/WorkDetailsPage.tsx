@@ -1,3 +1,4 @@
+import { ViewingLinks } from "../components/ViewingLinks";
 import { t, genreLabel, useLanguage } from "../i18n";
 import { WorkActions } from "../components/WorkActions";
 import { useEffect, useState } from "react";
@@ -67,16 +68,6 @@ function isMangaAnimeRelation(
   return relation.relationType === "ADAPTATION" && relation.type !== workType;
 }
 
-function isSafeExternalUrl(value: string): boolean {
-  try {
-    const url = new URL(value);
-
-    return url.protocol === "https:" || url.protocol === "http:";
-  } catch {
-    return false;
-  }
-}
-
 function getMediaStatusLabel(status: string | null): string {
   switch (status) {
     case "FINISHED":
@@ -113,6 +104,7 @@ export function WorkDetailsPage() {
 
   const [loadedWorkId, setLoadedWorkId] = useState<number | null>(null);
 
+  const [relatedLibrary, setRelatedLibrary] = useState<LibraryEntry[]>([]);
   const [libraryEntry, setLibraryEntry] = useState<LibraryEntry | null>(null);
 
   const [resumeChapterInputs, setResumeChapterInputs] = useState<
@@ -126,9 +118,6 @@ export function WorkDetailsPage() {
   const [resumeError, setResumeError] = useState<string | null>(null);
 
   const [error, setError] = useState<string | null>(null);
-
-  const [showAllStreamingEpisodes, setShowAllStreamingEpisodes] =
-    useState(false);
 
   useEffect(() => {
     if (invalidWorkId) {
@@ -149,14 +138,13 @@ export function WorkDetailsPage() {
         setWork(details);
 
         setLibraryEntry(entry);
+        setRelatedLibrary(library);
 
         setError(null);
 
         setResumeMessage(null);
 
         setResumeError(null);
-
-        setShowAllStreamingEpisodes(false);
 
         if (entry?.resumeCatalogItemId != null && entry.resumeChapter != null) {
           setResumeChapterInputs({
@@ -302,34 +290,6 @@ export function WorkDetailsPage() {
     (relation) => !isMangaAnimeRelation(currentWork.type, relation),
   );
 
-  const externalLinks = currentWork.externalLinks ?? [];
-
-  const streamingEpisodes = currentWork.streamingEpisodes ?? [];
-
-  const platformLinks = Array.from(
-    new Map(
-      externalLinks
-        .filter(
-          (link) =>
-            !link.isDisabled &&
-            link.type === "STREAMING" &&
-            isSafeExternalUrl(link.url),
-        )
-        .map((link) => [link.url, link]),
-    ).values(),
-  );
-
-  const safeStreamingEpisodes = streamingEpisodes.filter((episode) =>
-    isSafeExternalUrl(episode.url),
-  );
-
-  const visibleStreamingEpisodes = showAllStreamingEpisodes
-    ? safeStreamingEpisodes
-    : safeStreamingEpisodes.slice(0, 12);
-
-  const hasViewingOptions =
-    platformLinks.length > 0 || safeStreamingEpisodes.length > 0;
-
   function renderRelation(relation: CatalogRelation, highlighted = false) {
     const canSetResumePoint =
       highlighted &&
@@ -341,6 +301,9 @@ export function WorkDetailsPage() {
       libraryEntry?.resumeCatalogItemId === relation.id &&
       libraryEntry.resumeChapter != null;
 
+    const relatedEntry = relatedLibrary.find(
+      (entry) => entry.catalogItemId === relation.id,
+    );
     const chapterInput = resumeChapterInputs[relation.id] ?? "";
 
     return (
@@ -375,6 +338,28 @@ export function WorkDetailsPage() {
             </p>
           )}
 
+          {highlighted && relatedEntry && (
+            <div className="relation-follow-summary">
+              <strong>
+                {relation.type === "anime"
+                  ? t("Anime suivi : épisode {number}", {
+                      number: relatedEntry.progress,
+                    })
+                  : t("Manga suivi : chapitre {number}", {
+                      number: relatedEntry.progress,
+                    })}
+              </strong>
+              {relatedEntry.resumeCatalogItemId === currentWork.id &&
+                relatedEntry.resumeChapter != null && (
+                  <p>
+                    {t(
+                      "Ton point de reprise dans ce manga : chapitre {number}",
+                      { number: relatedEntry.resumeChapter },
+                    )}
+                  </p>
+                )}
+            </div>
+          )}
           {canSetResumePoint && (
             <div className="resume-point">
               <h5>{t("Point de reprise manga")} </h5>
@@ -475,6 +460,55 @@ export function WorkDetailsPage() {
         )}
       </div>
 
+      <h1 className="work-page-title">{currentWork.title}</h1>
+      <nav className="work-shortcuts" aria-label={t("Accès rapides à l’œuvre")}>
+        <a href="#watch-links">
+          {currentWork.type === "anime"
+            ? t("Regarder les épisodes")
+            : t("Lire / liens utiles")}{" "}
+          ↗
+        </a>
+        {mangaAnimeRelations.length > 0 && (
+          <a href="#adaptations">
+            {currentWork.type === "manga"
+              ? t("Voir l’anime et mon épisode suivi")
+              : t("Reprendre dans le manga")}{" "}
+            →
+          </a>
+        )}
+        <a href="#work-tracking">{t("Mon suivi")}</a>
+      </nav>
+      {mangaAnimeRelations.length > 0 && (
+        <section
+          id="adaptations"
+          className="relations-section adaptations-priority"
+        >
+          <div className="section-heading">
+            <span className="page-eyebrow">{t("Continuer l’histoire")} </span>
+
+            <h3>{t("Adaptation manga / anime")} </h3>
+
+            <p>
+              {t(
+                "Passe facilement d’un support à l’autre et conserve ton point de reprise.",
+              )}{" "}
+            </p>
+          </div>
+
+          <div className="relations-grid">
+            {mangaAnimeRelations.map((relation) =>
+              renderRelation(relation, true),
+            )}
+          </div>
+        </section>
+      )}
+
+      <ViewingLinks
+        key={currentWork.id}
+        work={currentWork}
+        entry={libraryEntry}
+        onChange={setLibraryEntry}
+      />
       <section className="work-hero">
         <div className="work-poster-column">
           {currentWork.imageUrl ? (
@@ -583,152 +617,18 @@ export function WorkDetailsPage() {
         </div>
       </section>
 
-      <WorkActions
-        key={currentWork.id}
-        work={currentWork}
-        entry={libraryEntry}
-        onChange={setLibraryEntry}
-      />
-
-      <section className="watch-section">
-        <div className="section-heading">
-          <span className="page-eyebrow">{t("Disponibilité")} </span>
-
-          <h3>
-            {currentWork.type === "anime" ? t("Où regarder ?") : t("Où lire ?")}
-          </h3>
-
-          <p>{t("Liens externes référencés par AniList pour cette œuvre.")} </p>
-        </div>
-
-        {platformLinks.length > 0 && (
-          <div className="platform-links">
-            {platformLinks.map((link) => (
-              <a
-                key={link.url}
-                href={link.url}
-                target="_blank"
-                rel="noreferrer"
-                className="platform-link"
-              >
-                {link.icon && (
-                  <img src={link.icon} alt="" className="platform-icon" />
-                )}
-
-                <span>{link.site}</span>
-
-                <strong>
-                  {currentWork.type === "anime" ? "Regarder ↗" : "Lire ↗"}
-                </strong>
-              </a>
-            ))}
-          </div>
-        )}
-
-        {currentWork.type === "anime" && safeStreamingEpisodes.length > 0 && (
-          <div className="streaming-episodes">
-            <div className="streaming-heading">
-              <div>
-                <h4>{t("Épisodes disponibles")} </h4>
-
-                <p>{t("Accès direct aux épisodes référencés par AniList.")} </p>
-              </div>
-
-              <span>
-                {safeStreamingEpisodes.length} {t("épisode")}{" "}
-                {safeStreamingEpisodes.length > 1 ? "s" : ""}
-              </span>
-            </div>
-
-            <div className="streaming-grid">
-              {visibleStreamingEpisodes.map((episode, index) => (
-                <a
-                  key={`${episode.url}-${index}`}
-                  href={episode.url}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="streaming-card"
-                >
-                  {episode.thumbnail && (
-                    <img
-                      src={episode.thumbnail}
-                      alt=""
-                      className="streaming-thumbnail"
-                    />
-                  )}
-
-                  <span>
-                    {episode.title ||
-                      t("Épisode {number}", { number: index + 1 })}
-                  </span>
-
-                  <small>{episode.site}</small>
-                </a>
-              ))}
-            </div>
-
-            {safeStreamingEpisodes.length > 12 && (
-              <button
-                type="button"
-                className="streaming-toggle"
-                onClick={() =>
-                  setShowAllStreamingEpisodes((current) => !current)
-                }
-              >
-                {showAllStreamingEpisodes
-                  ? t("Afficher moins")
-                  : t("Afficher les {count} épisodes", {
-                      count: safeStreamingEpisodes.length,
-                    })}
-              </button>
-            )}
-          </div>
-        )}
-
-        {!hasViewingOptions && (
-          <div className="watch-empty">
-            <strong>{t("Aucune plateforme renseignée")} </strong>
-
-            <p>
-              {t("AniList ne référence actuellement aucune plateforme de")}{" "}
-              {currentWork.type === "anime" ? t("visionnage") : t("lecture")}{" "}
-              {t("pour cette œuvre.")}{" "}
-            </p>
-          </div>
-        )}
-
-        <p className="watch-disclaimer">
-          {t(
-            "MyMangaTracker n’héberge aucun contenu : les liens ouvrent les plateformes externes référencées par AniList.",
-          )}{" "}
-        </p>
-      </section>
-
+      <div id="work-tracking">
+        {" "}
+        <WorkActions
+          key={currentWork.id}
+          work={currentWork}
+          entry={libraryEntry}
+          onChange={setLibraryEntry}
+        />
+      </div>
       {resumeMessage && <p className="success-message">{resumeMessage}</p>}
 
       {resumeError && <p className="error-message">{resumeError}</p>}
-
-      {mangaAnimeRelations.length > 0 && (
-        <section className="relations-section">
-          <div className="section-heading">
-            <span className="page-eyebrow">{t("Continuer l’histoire")} </span>
-
-            <h3>{t("Adaptation manga / anime")} </h3>
-
-            <p>
-              {t(
-                "Passe facilement d’un support à l’autre et conserve ton point de reprise.",
-              )}{" "}
-            </p>
-          </div>
-
-          <div className="relations-grid">
-            {mangaAnimeRelations.map((relation) =>
-              renderRelation(relation, true),
-            )}
-          </div>
-        </section>
-      )}
 
       {otherRelations.length > 0 && (
         <section className="relations-section">

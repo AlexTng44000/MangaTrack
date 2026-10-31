@@ -231,8 +231,7 @@ export function StatsPage() {
           <strong>{stats.favorites}</strong>
 
           <small>
-            {t("œuvre")} {stats.favorites > 1 ? "s" : ""} favorite
-            {stats.favorites > 1 ? "s" : ""}
+            {t(stats.favorites > 1 ? "œuvres favorites" : "œuvre favorite")}
           </small>
         </article>
 
@@ -272,7 +271,7 @@ export function StatsPage() {
               <strong>{stats.anime.count}</strong>
 
               <small>
-                {t("anime suivi")} {stats.anime.count > 1 ? "s" : ""}
+                {t(stats.anime.count > 1 ? "animes suivis" : "anime suivi")}
               </small>
 
               <div className="stats-media-progress">
@@ -288,7 +287,7 @@ export function StatsPage() {
               <strong>{stats.manga.count}</strong>
 
               <small>
-                {t("manga suivi")} {stats.manga.count > 1 ? "s" : ""}
+                {t(stats.manga.count > 1 ? "mangas suivis" : "manga suivi")}
               </small>
 
               <div className="stats-media-progress">

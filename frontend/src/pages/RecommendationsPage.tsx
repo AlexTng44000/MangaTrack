@@ -234,7 +234,7 @@ export function RecommendationsPage() {
           <strong>{recommendations.length}</strong>
 
           <span>
-            {t("suggestion")} {recommendations.length > 1 ? "s" : ""}
+            {t(recommendations.length > 1 ? "suggestions" : "suggestion")}
           </span>
         </div>
       </section>

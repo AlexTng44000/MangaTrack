@@ -30,7 +30,6 @@ export function WorkActions({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
-  const [progress, setProgress] = useState(String(entry?.progress ?? 0));
   const [target, setTarget] = useState("");
   const [date, setDate] = useState("");
   const [message, setMessage] = useState("");
@@ -62,7 +61,6 @@ export function WorkActions({
     try {
       const updated = await action();
       onChange(updated);
-      setProgress(String(updated?.progress ?? 0));
     } catch (error) {
       setError(
         error instanceof Error
@@ -206,6 +204,9 @@ export function WorkActions({
               <form
                 onSubmit={(event) => {
                   event.preventDefault();
+                  const progress = String(
+                    new FormData(event.currentTarget).get("progress") ?? "",
+                  );
                   const value = Number(progress);
                   if (
                     progress.trim() === "" ||
@@ -231,8 +232,9 @@ export function WorkActions({
                     max={work.total ?? undefined}
                     step="1"
                     required
-                    value={progress}
-                    onChange={(event) => setProgress(event.target.value)}
+                    name="progress"
+                    key={entry.progress}
+                    defaultValue={entry.progress}
                   />
                 </label>
                 <button disabled={busy} type="submit">

@@ -898,9 +898,9 @@ select option {
 
 .load-more button {
   min-width: 220px;
-  border-color: rgba(139, 92, 246, 0.18) !important;
-  background: rgba(139, 92, 246, 0.08) !important;
-  color: #ddd6fe !important;
+  border-color: #6626d4;
+  background: #6626d4;
+  color: #ffffff;
 }
 
 /* Bibliothèque */
@@ -4761,3 +4761,49 @@ body {
 .watch-section .section-heading p { color:#c5bbd1; }
 .relations-empty { color:#655772; }
 .work-tool input, .work-tool select, .work-tool textarea, .home-filters select, .language-picker select { color-scheme:dark; }
+
+/* Keep discovery controls within reach without covering the list. */
+.home-page { overflow-anchor: none; }
+.filter-sentinel { height:1px; }
+.home-filters { position:sticky; top:12px; z-index:40; box-shadow:0 10px 26px rgba(16,8,29,.22); }
+.filter-pin-toolbar { display:flex; align-items:center; justify-content:space-between; gap:12px; }
+.home-filters-pinned { padding:12px 18px; }
+.home-filters-pinned .home-filter-controls { display:none; }
+.home-filters-pinned.home-filters-expanded .home-filter-controls { display:block; margin-top:16px; max-height:65dvh; overflow-y:auto; overscroll-behavior:contain; }
+.home-filters .filter-pin-toolbar button { background:#7139d5; border-color:#b590ff; color:#fff; }
+.home-page .load-more .load-more-button { background:#6626d4; border:2px solid #6626d4; color:#fff; font-weight:800; box-shadow:0 6px 18px rgba(102,38,212,.25); min-width:240px; }
+.home-page .load-more .load-more-button:hover:not(:disabled) { background:#4f1ba9; border-color:#4f1ba9; color:#fff; }
+.home-page .load-more .load-more-button:disabled { opacity:.7; }
+.home-card-actions { flex-wrap:wrap; }
+button.remove-library-button { display:inline-flex; gap:7px; align-items:center; justify-content:center; min-height:44px; color:#ffb7bd; background:#44232f; border-color:#b86173; }
+button.remove-library-button:hover:not(:disabled) { color:#fff; background:#872f48; border-color:#ffa9ba; }
+.calendar-card-content > .remove-library-button { width:100%; margin-top:10px; }
+.work-page-title { margin:20px 0; color:#241633; font-size:clamp(26px,4vw,40px); line-height:1.2; }
+.work-shortcuts { display:flex; flex-wrap:wrap; gap:12px; margin:18px 0 24px; }
+.work-shortcuts a, a.watch-primary-link { display:inline-flex; align-items:center; gap:10px; min-height:48px; padding:12px 18px; border-radius:12px; font-weight:750; text-decoration:none; color:#fff; background:#6626d4; border:1px solid #b38aff; }
+.work-shortcuts a:hover, a.watch-primary-link:hover { background:#4f1ba9; color:white; }
+#watch-links, #adaptations, #work-tracking { scroll-margin-top:20px; }
+.adaptations-priority { padding:20px; border:2px solid #9f73e9; border-radius:18px; background:#f1eaff; }
+.adaptations-priority .section-heading p { color:#655772; }
+.relation-follow-summary { display:grid; gap:6px; margin:10px 0; padding:12px; border-radius:10px; background:#432e60; color:white; }
+.relation-follow-summary p { margin:0; color:#e2d1ff; }
+.viewing-links { border:2px solid #9b6be9; }
+.viewing-links .platform-links { margin:16px 0; }
+.next-episode-panel { display:flex; flex-wrap:wrap; align-items:center; gap:14px; padding:18px; border-radius:12px; background:#2d2140; margin:16px 0; }
+.next-episode-panel > strong { flex-basis:100%; }
+.episode-watch-card { display:flex; flex-direction:column; gap:10px; padding:12px; background:#20182d; border:1px solid #72558f; border-radius:12px; min-width:0; }
+.episode-watch-card .streaming-card { flex:1; color:#f7f0ff; }
+.episode-watch-card .streaming-card strong { overflow-wrap:anywhere; }
+.episode-watch-card-seen { border-color:#58b58a; }
+.episode-watch-card button, .next-episode-panel button { background:#49305e; color:#fff; border-color:#bd96dd; }
+.episode-seen { color:#8ff0bb; font-weight:700; }
+.viewing-sync-note { margin-top:18px; color:#cfbedf; font-size:14px; line-height:1.6; }
+@media(max-width:760px) {
+ .home-filters { top:6px; }
+ .home-filters-pinned { padding:10px 12px; }
+ .home-filters-pinned.home-filters-expanded .home-filter-controls { max-height:60dvh; }
+ .work-shortcuts { display:grid; grid-template-columns:minmax(0,1fr); }
+ .work-shortcuts a, .next-episode-panel a { justify-content:center; text-align:center; }
+ .next-episode-panel { flex-direction:column; align-items:stretch; }
+ .adaptations-priority { padding:14px; }
+}
