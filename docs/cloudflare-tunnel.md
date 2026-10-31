@@ -13,7 +13,7 @@ docker compose -f docker-compose.yml -f compose.tunnel.yml up -d --build fronten
 docker compose -f docker-compose.yml -f compose.tunnel.yml logs -f tunnel
 ```
 
-Le helper conserve la configuration existante et remplace seulement une clé JWT de démonstration/manquante par une clé aléatoire. Il ne l’affiche pas. Si la clé a changé, reconnecter les sessions existantes après le redémarrage.
+Le helper conserve la configuration existante, remet les fins de ligne Windows au format sûr pour Docker et remplace seulement une clé JWT de démonstration/manquante par une clé aléatoire. Il ne l’affiche pas. Si la clé a changé, reconnecter les sessions existantes après le redémarrage.
 
 Attendre dans les logs une adresse du type `https://quelque-chose.trycloudflare.com`. C’est **cette URL** qu’il faut ouvrir et partager. Les URL localhost ne conviennent pas à tes amis. Un Quick Tunnel ne demande pas de compte Cloudflare et reste un service de test temporaire ; son adresse peut changer après recréation du tunnel.
 
@@ -46,3 +46,21 @@ docker compose -f docker-compose.yml up -d frontend
 ```
 
 Ne pas utiliser `down -v` : les volumes contiennent ta bibliothèque et tes comptes.
+
+## Réparer l’erreur JSON et un backend qui n’a pas démarré
+
+Si les logs backend indiquent `JWT_SECRET: expected string, received undefined`, une ancienne version du helper a pu fusionner la ligne JWT avec la ligne précédente sur Windows (CRLF). Un conteneur `tsx watch` peut rester « Up » alors que son API est arrêtée. Le nouveau helper répare aussi ce fichier existant, sans supprimer les autres variables ni faire tourner une clé déjà valide.
+
+Depuis le dossier contenant `docker-compose.yml` :
+
+```powershell
+git pull origin main
+node .\deploy\prepare-tunnel.mjs
+docker compose -f docker-compose.yml -f compose.tunnel.yml up -d --build --force-recreate backend frontend tunnel
+curl.exe -i http://localhost:5173/api/health
+docker compose -f docker-compose.yml -f compose.tunnel.yml logs -f tunnel
+```
+
+La route `/api/health` doit répondre HTTP 200 avec `{"status":"ok","application":"MangaTrack"}`. Ouvrir ensuite l’adresse HTTPS actuellement affichée dans les logs du tunnel : elle peut changer après recréation. Les contrôles de santé empêchent maintenant un démarrage réussi du tunnel si l’API ou le proxy sont indisponibles. L’interface distingue une API inaccessible, une réponse non JSON, une limite de tentatives et un blocage du stockage navigateur.
+
+Pour vérifier la régression Windows dans le dépôt : `node --test deploy/test/prepare-tunnel.test.mjs`. Ne pas afficher le fichier `.env` ni partager les valeurs JWT/SMTP pour diagnostiquer ce problème. Les commandes ci-dessus recréent les conteneurs mais conservent les volumes et les comptes.

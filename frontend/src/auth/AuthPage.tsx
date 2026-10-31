@@ -81,7 +81,11 @@ export function AuthPage({ onAuthenticated }: AuthPageProps) {
         </button>
       </form>
 
-      {error && <p className="error-message">{t(error)}</p>}
+      {error && (
+        <p className="error-message" role="alert">
+          {t(error)}
+        </p>
+      )}
 
       <button
         type="button"

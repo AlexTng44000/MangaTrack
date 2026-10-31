@@ -5,10 +5,17 @@ services:
       VITE_API_URL: /api
       VITE_API_PROXY_TARGET: http://backend:3354
       NO_PROXY: ${NO_PROXY:-localhost,127.0.0.1},backend
+    healthcheck:
+      test: [CMD, node, -e, 'fetch("http://127.0.0.1:5173/api/health").then(async r=>{const body=await r.json();process.exit(r.ok&&body.status==="ok"?0:1)}).catch(()=>process.exit(1))']
+      interval: 5s
+      timeout: 5s
+      start_period: 15s
+      retries: 12
   tunnel:
     image: cloudflare/cloudflared:latest
     command: [tunnel, --no-autoupdate, --protocol, http2, --url, 'http://frontend:5173', --http-host-header, localhost]
     environment:
       NO_PROXY: ${NO_PROXY:-localhost,127.0.0.1},frontend
-    depends_on: [frontend]
+    depends_on:
+      frontend: {condition: service_healthy}
     restart: 'no'

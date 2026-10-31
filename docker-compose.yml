@@ -60,6 +60,13 @@ services:
     ports:
       - "3354:3354"
 
+    healthcheck:
+      test: [ "CMD", "node", "-e", "fetch('http://127.0.0.1:3354/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))" ]
+      interval: 5s
+      timeout: 5s
+      start_period: 10s
+      retries: 12
+
     depends_on:
       postgres:
         condition: service_healthy
@@ -96,13 +103,15 @@ services:
     restart: unless-stopped
 
     environment:
-      VITE_API_URL: http://localhost:3354
+      VITE_API_URL: /api
+      VITE_API_PROXY_TARGET: http://backend:3354
 
     ports:
       - "5173:5173"
 
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
 
 volumes:
   postgres_data:

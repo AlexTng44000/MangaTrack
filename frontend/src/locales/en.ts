@@ -1,4 +1,19 @@
 export const english: Record<string, string> = {
+  "Connexion à l’API impossible. Vérifie que le backend est démarré et que le tunnel transmet /api.":
+    "Unable to connect to the API. Check that the backend is running and the tunnel forwards /api.",
+  "Trop de tentatives de connexion. Réessaie plus tard.":
+    "Too many sign-in attempts. Please try again later.",
+  "Le site répond, mais l’API d’authentification ne renvoie pas du JSON. Vérifie /api/health et la configuration du tunnel.":
+    "The site responds, but the authentication API is not returning JSON. Check /api/health and the tunnel configuration.",
+  "API d’authentification indisponible (HTTP {status}). Vérifie le backend et le tunnel.":
+    "Authentication API unavailable (HTTP {status}). Check the backend and tunnel.",
+  "Réponse d’authentification invalide. Vérifie que /api est bien relié au backend.":
+    "Invalid authentication response. Check that /api is routed to the backend.",
+  "Compte créé, mais ce navigateur ne peut pas mémoriser la session. Ouvre le lien dans Safari ou Chrome et connecte-toi.":
+    "Account created, but this browser cannot store your session. Open the link in Safari or Chrome and sign in.",
+  "Connexion réussie, mais ce navigateur ne peut pas mémoriser la session. Ouvre le lien dans Safari ou Chrome.":
+    "Signed in, but this browser cannot store your session. Open the link in Safari or Chrome.",
+
   "œuvres favorites": "favourite works",
   "œuvre favorite": "favourite work",
   "animes suivis": "anime followed",

@@ -1,4 +1,5 @@
 import { t } from "../i18n";
+import { API_URL } from "./baseUrl";
 import type {
   CalendarRelease,
   CatalogPageResult,
@@ -9,8 +10,6 @@ import type {
 import type { LibraryEntry, LibraryStatus } from "../types/library";
 
 import { getToken, logout } from "../auth/auth";
-
-const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:3354";
 
 async function authenticatedFetch(
   url: string,
