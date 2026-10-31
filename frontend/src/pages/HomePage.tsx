@@ -378,7 +378,7 @@ export function HomePage() {
             <button
               type="button"
               onClick={() => {
-                setParams({});
+                setParams(libraryMode ? { scope: "library" } : {});
               }}
             >
               {t("Réinitialiser les filtres")}

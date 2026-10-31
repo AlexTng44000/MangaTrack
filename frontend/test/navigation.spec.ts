@@ -196,6 +196,10 @@ test("one home filters discovery and library; old library links still work", asy
   await expect(page.locator(".home-card")).toHaveCount(0);
   await openFilters(page);
   await page.getByRole("button", { name: "Réinitialiser les filtres" }).click();
+  await expect(page.locator(".home-card")).toHaveCount(1);
+  await expect(page).toHaveURL(/scope=library/);
+  await openFilters(page);
+  await page.getByRole("button", { name: "Tout explorer", exact: true }).click();
   await expect(page.locator(".home-card")).toHaveCount(2);
   await openFilters(page);
   await page.getByLabel("Rechercher un titre").fill("Blue");
@@ -606,4 +610,28 @@ test('load more appends the next page and disappears when the catalogue ends', a
   await page.getByRole('button', { name: 'Afficher plus d’œuvres', exact: true }).click();
   await expect(page.locator('.home-card')).toHaveCount(2);
   await expect(page.getByRole('button', { name: 'Afficher plus d’œuvres', exact: true })).toHaveCount(0);
+});
+
+
+test('reset clears library filters while keeping the library selected', async ({ page }) => {
+  await setup(page, { library: [tracked(1)] });
+  await page.goto('/?scope=library&q=Missing&type=manga&genre=Drama&status=termine&favorite=1&sort=title');
+  await expect(page.locator('.home-card')).toHaveCount(0);
+  await openFilters(page);
+  await page.getByRole('button', { name: 'Réinitialiser les filtres', exact: true }).click();
+  await expect(page).toHaveURL(/\/\?scope=library$/);
+  await expect(page.getByRole('button', { name: 'Ma bibliothèque', exact: true })).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.locator('.home-card')).toHaveCount(1);
+  await expect(page.locator('.home-card')).toContainText('Frieren');
+});
+
+test('catalogue failures show a prominent accessible error', async ({ page }) => {
+  await setup(page);
+  await page.route('http://localhost:3354/catalog?**', route => route.fulfill({ status: 503, json: { error: 'Unavailable' } }));
+  await page.goto('/');
+  const alert = page.getByRole('alert');
+  await expect(alert).toBeVisible();
+  await expect(alert).toContainText('Impossible de charger les œuvres');
+  const colors = await alert.evaluate(element => ({ text: getComputedStyle(element).color, background: getComputedStyle(element).backgroundColor, border: getComputedStyle(element).borderLeftWidth }));
+  expect(colors).toEqual({ text: 'rgb(133, 21, 35)', background: 'rgb(255, 240, 241)', border: '6px' });
 });

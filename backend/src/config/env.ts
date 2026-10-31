@@ -31,6 +31,8 @@ const envSchema = z.object({
             'https://graphql.anilist.co',
         ),
 
+    TRUST_PROXY_HOPS: z.coerce.number().int().min(0).max(1).default(0),
+
     PORT: z
         .coerce
         .number()
@@ -59,13 +61,9 @@ const envSchema = z.object({
         .positive()
         .default(587),
 
-    SMTP_USER: z
-        .string()
-        .min(1),
+    SMTP_USER: z.string().default(''),
 
-    SMTP_PASSWORD: z
-        .string()
-        .min(1),
+    SMTP_PASSWORD: z.string().default(''),
 
     MAIL_FROM_NAME: z
         .string()
@@ -76,7 +74,7 @@ const envSchema = z.object({
 
     MAIL_FROM_EMAIL: z
         .string()
-        .email(),
+        .email().default('noreply@example.invalid'),
 });
 
 const result =

@@ -24,6 +24,12 @@ import {
     PostgresReminderRepository,
 } from '../infrastructure/database/postgresReminder.repository.js';
 
+// Starting an API does not require SMTP, but an enabled delivery worker does.
+if (!env.SMTP_USER || !env.SMTP_PASSWORD || env.MAIL_FROM_EMAIL.endsWith('.invalid')) {
+    console.error('Configure SMTP_USER, SMTP_PASSWORD and a valid MAIL_FROM_EMAIL before starting the notification worker.');
+    process.exit(1);
+}
+
 const redisConnection =
     new Redis(
         env.REDIS_URL,

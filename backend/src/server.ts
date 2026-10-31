@@ -115,6 +115,9 @@ import {
 
 const app = express();
 
+// Production exposes the API only through its single Caddy proxy.
+app.set('trust proxy', env.TRUST_PROXY_HOPS);
+
 const PORT =
     env.PORT;
 

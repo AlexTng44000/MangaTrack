@@ -32,6 +32,10 @@ Les tests navigateur utilisent des réponses API simulées pour être indépenda
 
 ---
 
+## Déploiement sur une VM
+
+Une configuration de production avec Caddy/HTTPS, API compilée, PostgreSQL et Redis privés est disponible dans `compose.production.yml`. Le [guide VM](docs/deploy-free-vm.md) explique la création du compte/serveur, le DNS, la configuration et le lancement automatisé. Cette configuration est séparée du Docker Compose de développement. Les e-mails sont optionnels et nécessitent des identifiants SMTP réels et l’activation du profil `notifications`.
+
 ## Fonctionnalités
 
 ### Authentification
