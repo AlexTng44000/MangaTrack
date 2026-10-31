@@ -4,3 +4,7 @@ packages:
 allowBuilds:
   esbuild: true
   msgpackr-extract: true
+
+# GHSA-g3hv-75wg-m249: remove when ESLint dependencies require a fixed release.
+overrides:
+  minimatch: 11.0.1
